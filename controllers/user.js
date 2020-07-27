@@ -91,11 +91,12 @@ const getUser = async ctx => {
   let userInfo = {
     username: user_json.username,
   }
+  let userInfo_str = JSON.stringify(userInfo)
 
   ctx.body = {
     code: 0,
     msg: 'ok',
-    userInfo
+    userInfo: userInfo_str,
   }
 }
 
