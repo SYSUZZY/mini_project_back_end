@@ -41,7 +41,13 @@ const signup = async ctx => {
   let user = await redis_client.getAsync(username)
   if (user) throw new SE(2, '用户名已存在')
 
-  await redis_client.setAsync(username, JSON.stringify({'username': username, 'password': password,}))
+  await redis_client.setAsync(username, JSON.stringify({
+      'username': username,
+      'password': password,
+      'world_index': '0',
+      'weapon_index': '0',
+      'character_index': '0',
+    }))
 
   ctx.body = {
     code: 0,
@@ -90,6 +96,9 @@ const getUser = async ctx => {
   let user_json = JSON.parse(user)
   let userInfo = {
     username: user_json.username,
+    world_index: user_json.world_index,
+    weapon_index: user_json.weapon_index,
+    character_index: user_json.character_index,
   }
   let userInfo_str = JSON.stringify(userInfo)
 
