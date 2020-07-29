@@ -58,7 +58,7 @@ const signup = async ctx => {
 
 const updateUser = async ctx => {
   let username = ctx.user.username
-  let updates = ctx.params.updates
+  let updates = ctx.params
   console.log(username, updates)
   let user = await redis_client.getAsync(username)
   let user_json = JSON.parse(user)
