@@ -5,6 +5,8 @@ connected_clients = []
 waitting_queue = []
 
 const manageConnection = async ctx => {
+  
+  ctx.websocket.send('Hello World')
 
   connected_clients.push(ctx)
   token = ctx.header.authorization
@@ -18,8 +20,6 @@ const manageConnection = async ctx => {
   ctx.websocket.on('connection', () => {
     console.log('Connection')
   })
-
-  ctx.websocket.send('Hello World')
   
 }
 
