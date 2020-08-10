@@ -19,9 +19,9 @@ class room {
 
     var instance = this
     this.room_server = setInterval(function() {
-      console.log('Room ' + this.room_id + ' has ' + this.player_list.length + ' players.')
-      if (this.player_list.length > this.start_players) {
-        cur_client = this.player_list.shift()
+      console.log('Room ' + instance.room_id + ' has ' + instance.player_list.length + ' players.')
+      if (instance.player_list.length > instance.start_players) {
+        cur_client = instance.player_list.shift()
         console.log(cur_client.username + ' add into DS.')
       }
     }, 1000, instance)
