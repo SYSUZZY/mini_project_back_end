@@ -1,14 +1,39 @@
 const SE = require('../utils/systemError')
-const token = require('../utils/token')
+const tokenUtil = require('../utils/token')
+const redis_client = require('../utils/redis')
 
-connected_clients = []
+connected_clients = {}
+
 waitting_queue = []
 
 const manageConnection = async ctx => {
-  
-  ctx.websocket.send('Hello World')
-  console.log(ctx.header.authorization)
-  console.log('No Error')
+
+  token = ctx.header.authorization
+  if (token) {
+    console.log(token)
+    payload = await tokenUtil.verifyToken(token)
+
+    if (!payload) {
+      throw new SE(1, 'No Authorization', null)
+    }
+
+    if (payload.username) {
+      connected_clients[payload.username] = ctx
+      // Register Event Listener
+      ctx.websocket.on('ApplyMatch', () => {
+        username = payload.username
+        console.log(payload.username + ' apply match!')
+      })
+
+      ctx.websocket.send('Hello World')
+
+    } else {
+      throw new SE(1, 'No Authorization', null)
+    }
+  }
+  else {
+    console.log('have not token')
+  }
 
   // connected_clients.push(ctx)
   // token = ctx.header.authorization
@@ -19,9 +44,7 @@ const manageConnection = async ctx => {
   //   console.log('have not token')
   // }
 
-  // ctx.websocket.on('connection', () => {
-  //   console.log('Connection')
-  // })
+
   
 }
 
