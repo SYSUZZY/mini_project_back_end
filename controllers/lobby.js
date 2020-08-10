@@ -2,7 +2,6 @@ const SE = require('../utils/systemError')
 const tokenUtil = require('../utils/token')
 
 connected_clients = {}
-
 waitting_queue = []
 room_list = []
 
@@ -107,6 +106,8 @@ let lobby_server = setInterval(function() {
       }
     }
   }
+
+  console.log(connected_clients.keys())
 }, 1000)
 
 module.exports = {
