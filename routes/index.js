@@ -10,5 +10,6 @@ module.exports = app => {
   webAPI.use(Temp.routes())
   
   app.use(webAPI.routes())
+  
   app.ws.use(Lobby.routes())
 }
