@@ -1,10 +1,17 @@
 const SE = require('../utils/systemError')
 const tokenUtil = require('../utils/token')
-const redis_client = require('../utils/redis')
 
 connected_clients = {}
 
 waitting_queue = []
+
+const applyMatch = (username)=> {
+  client = connected_clients[username]
+  if (!waitting_queue.includes(client)) {
+    waitting_queue.push(client)
+    console.log('Add ' + username + ' in waitting queue.')
+  }
+}
 
 const manageConnection = async ctx => {
 
@@ -19,9 +26,13 @@ const manageConnection = async ctx => {
 
     if (payload.username) {
       connected_clients[payload.username] = ctx
+
       // Register Event Listener
       ctx.websocket.on('message', (msg) => {
-        console.log(msg)
+        json_msg = JSON.parse(msg)
+        if (json_msg.action == 'ApplyMatch') {
+          applyMatch(payload.username)
+        }
         username = payload.username
         console.log(payload.username)
       })
@@ -35,26 +46,10 @@ const manageConnection = async ctx => {
   else {
     console.log('have not token')
   }
-
-  // connected_clients.push(ctx)
-  // token = ctx.header.authorization
-  // if (token) {
-  //   console.log(token)
-  // }
-  // else {
-  //   console.log('have not token')
-  // }
-
-
-  
 }
 
-// Send the match application.
-const applyMatch = async ctx => {
 
-}
 
 module.exports = {
-  manageConnection,
-  applyMatch
+  manageConnection
 }
