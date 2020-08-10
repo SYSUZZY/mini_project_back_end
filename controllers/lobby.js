@@ -8,18 +8,18 @@ const manageConnection = async ctx => {
   
   ctx.websocket.send('Hello World')
 
-  connected_clients.push(ctx)
-  token = ctx.header.authorization
-  if (token) {
-    console.log(token)
-  }
-  else {
-    console.log('have not token')
-  }
+  // connected_clients.push(ctx)
+  // token = ctx.header.authorization
+  // if (token) {
+  //   console.log(token)
+  // }
+  // else {
+  //   console.log('have not token')
+  // }
 
-  ctx.websocket.on('connection', () => {
-    console.log('Connection')
-  })
+  // ctx.websocket.on('connection', () => {
+  //   console.log('Connection')
+  // })
   
 }
 
