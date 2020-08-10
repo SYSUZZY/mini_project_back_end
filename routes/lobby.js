@@ -4,7 +4,7 @@ const tempController = require('../controllers/lobby.js')
 const router = new koaRouter({ prefix: '/lobby' })
 
 router.all(
-    '/:id',
+    '/',
     tempController.callFunc,
 )
 
