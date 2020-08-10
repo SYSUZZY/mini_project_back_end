@@ -6,12 +6,12 @@ const callFunc = async ctx => {
 
     // 保存
     const zz = {
-        username: 'zhengzhao',
+        username: 'ziyang',
         password: 123456,
     }
     await redis_client.setAsync(zz.username, JSON.stringify(zz))
     // 获取
-    const zz_str = await redis_client.getAsync('zhengzhao')
+    const zz_str = await redis_client.getAsync('ziyang')
     const zz_obj = JSON.parse(zz_str)
 
     ctx.body = {

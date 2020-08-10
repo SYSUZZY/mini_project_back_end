@@ -4,7 +4,9 @@ const Routes = require('./routes')
 const logger = require('./utils/logger')
 const config = require('./config')
 
-const app = new Koa()
+const websockify = require('koa-websocket')
+
+const app = websockify(new Koa())
 
 Middlewares(app)
 Routes(app)
