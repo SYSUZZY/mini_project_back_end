@@ -7,9 +7,15 @@ waitting_queue = []
 
 const applyMatch = (username)=> {
   client = connected_clients[username]
+  console.log('Call Apply Match Function.')
+  console.log(len(waitting_queue))
+
   if (!waitting_queue.includes(client)) {
     waitting_queue.push(client)
     console.log('Add ' + username + ' in waitting queue.')
+  }
+  else {
+    console.log('Fail in waitting queue.')
   }
 }
 
