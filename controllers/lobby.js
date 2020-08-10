@@ -9,16 +9,13 @@ room_list = []
 const max_rooms = 2
 
 class room {
-  state = 0
-  max_players = 3
-  start_players = 1
-  player_list = []
-  room_server
-  room_id
+
   constructor(room_id, state, max_players) {
     this.room_id = room_id
     this.state = state
     this.max_players = max_players
+    this.start_players = 1
+    this.player_list = []
     this.room_server = setInterval(function() {
       console.log('Room ' + this.room_id + 'has ' + this.player_list.length + ' players.')
       if (this.player_list.length > start_players) {
