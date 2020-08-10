@@ -29,7 +29,7 @@ class room {
       }
       // The room is avaliable.
       if (instance.state == 1) {
-        cur_player = instance.player_list.shift()
+        let cur_player = instance.player_list.shift()
       }
       
     }, 1000, instance)
