@@ -92,13 +92,14 @@ let lobby_server = setInterval(function() {
     if (!add_room_success) {
       if (room_list.length < max_rooms) {
         let new_room = new room(room_list.length, 1, 3)
-        new_room.room_server = setInterval(function(new_room) {
+
+        new_room.room_server = setInterval(function() {
           console.log('Room ' + new_room.room_id + 'has ' + new_room.player_list.length + ' players.')
           if (new_room.player_list.length > start_players) {
             cur_client = new_room.player_list.shift()
             console.log(cur_client.username + ' add into DS.')
           }
-        }, 1000)
+        }, 1000, new_room)
         
         cur_client = waitting_queue.shift()
         new_room.player_list.push(cur_client)
