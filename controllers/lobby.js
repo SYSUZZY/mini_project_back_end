@@ -107,7 +107,7 @@ let lobby_server = setInterval(function() {
     }
   }
 
-  console.log(connected_clients.keys())
+  console.log(Object.keys(connected_clients))
 }, 1000)
 
 module.exports = {
