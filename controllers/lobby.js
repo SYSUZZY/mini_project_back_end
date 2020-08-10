@@ -10,21 +10,21 @@ const max_rooms = 2
 
 class room {
 
-  
-
   constructor(room_id, state, max_players) {
     this.room_id = room_id
     this.state = state
     this.max_players = max_players
     this.start_players = 1
     this.player_list = []
+
+    var instance = this
     this.room_server = setInterval(function() {
       console.log('Room ' + this.room_id + ' has ' + this.player_list.length + ' players.')
       if (this.player_list.length > this.start_players) {
         cur_client = this.player_list.shift()
         console.log(cur_client.username + ' add into DS.')
       }
-    }, 1000, this)
+    }, 1000, instance)
   }
 }
 
