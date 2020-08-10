@@ -8,7 +8,7 @@ waitting_queue = []
 function applyMatch(username) {
   client = connected_clients[username]
   console.log('Call Apply Match Function.')
-  console.log(len(waitting_queue))
+  console.log(waitting_queue.length)
 
   if (!waitting_queue.includes(client)) {
     waitting_queue.push(client)
@@ -40,7 +40,7 @@ const manageConnection = async ctx => {
         json_msg = JSON.parse(msg)
 
         console.log(json_msg.action)
-        
+
         if (json_msg.action == 'ApplyMatch') {
           applyMatch(payload.username)
         }
