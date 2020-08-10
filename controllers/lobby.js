@@ -99,7 +99,7 @@ let lobby_server = setInterval(function() {
     // Did not find an available room
     if (!add_room_success) {
       if (room_list.length < max_rooms) {
-        let new_room = room(room_list.length, 1, 3)
+        let new_room = new room(room_list.length, 1, 3)
         cur_client = waitting_queue.shift()
         new_room.player_list.push(cur_client)
         room_list.push(new_room)
