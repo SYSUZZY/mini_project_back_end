@@ -5,7 +5,7 @@ connected_clients = {}
 
 waitting_queue = []
 
-const applyMatch = (username)=> {
+function applyMatch(username) {
   client = connected_clients[username]
   console.log('Call Apply Match Function.')
   console.log(len(waitting_queue))
