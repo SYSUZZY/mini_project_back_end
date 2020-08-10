@@ -15,14 +15,24 @@ class room {
     this.max_players = max_players
     this.start_players = 1
     this.player_list = []
+    this.DS_started = false
 
-    this.room_server = setInterval(()=> {
-      console.log('Room ' + this.room_id + ' has ' + this.player_list.length + ' players.')
-      if (this.player_list.length > this.start_players) {
-        cur_client = this.player_list.shift()
-        console.log(cur_client.username + ' add into DS.')
+    var instance = this
+    this.room_server = setInterval(function(instance) {
+      console.log('Room ' + instance.room_id + ' has ' + instance.player_list.length + ' players.')
+      if (!instance.DS_started) {
+        if (instance.player_list.length > instance.start_players) {
+          // Setup DS
+          instance.DS_started = true
+          instance.state = 1
+        }
       }
-    }, 1000)
+      // The room is avaliable.
+      if (instance.state == 1) {
+        cur_player = instance.player_list.shift()
+      }
+      
+    }, 1000, instance)
   }
 }
 
