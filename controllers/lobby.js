@@ -20,9 +20,10 @@ const manageConnection = async ctx => {
     if (payload.username) {
       connected_clients[payload.username] = ctx
       // Register Event Listener
-      ctx.websocket.on('ApplyMatch', () => {
+      ctx.websocket.on('message', (msg) => {
+        console.log(msg)
         username = payload.username
-        console.log(payload.username + ' apply match!')
+        console.log(payload.username)
       })
 
       ctx.websocket.send('Hello World')
