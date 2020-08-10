@@ -16,14 +16,13 @@ class room {
     this.start_players = 1
     this.player_list = []
 
-    var instance = this
-    this.room_server = setInterval(function() {
-      console.log('Room ' + instance.room_id + ' has ' + instance.player_list.length + ' players.')
-      if (instance.player_list.length > instance.start_players) {
-        cur_client = instance.player_list.shift()
+    this.room_server = setInterval(()=> {
+      console.log('Room ' + this.room_id + ' has ' + this.player_list.length + ' players.')
+      if (this.player_list.length > this.start_players) {
+        cur_client = this.player_list.shift()
         console.log(cur_client.username + ' add into DS.')
       }
-    }, 1000, instance)
+    }, 1000)
   }
 }
 
@@ -107,7 +106,6 @@ let lobby_server = setInterval(function() {
     }
   }
 
-  console.log(Object.keys(connected_clients))
 }, 1000)
 
 module.exports = {
