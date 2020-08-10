@@ -35,7 +35,12 @@ const manageConnection = async ctx => {
 
       // Register Event Listener
       ctx.websocket.on('message', (msg) => {
+        console.log(msg)
+
         json_msg = JSON.parse(msg)
+
+        console.log(json_msg.action)
+        
         if (json_msg.action == 'ApplyMatch') {
           applyMatch(payload.username)
         }
