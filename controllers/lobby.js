@@ -54,7 +54,8 @@ const manageConnection = async ctx => {
     if (payload.username) {
       // Add connected client in list.
       if (!connected_clients.hasOwnProperty(payload.username)) {
-        connected_clients[payload.username] = { username: payload.username, room_id: -1, state: 'Idle', client: ctx }
+        // connected_clients[payload.username] = { username: payload.username, room_id: -1, state: 'Idle', client: ctx }
+        console.log(3.5)
       }
       else {
         console.log(payload.username + ' has been already in Lobby.')
