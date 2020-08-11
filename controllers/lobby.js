@@ -41,15 +41,16 @@ class Room {
 
 
 const manageConnection = async ctx => {
-
+  console.log(1)
   token = ctx.header.authorization
   if (token) {
+    console.log(2)
     payload = await tokenUtil.verifyToken(token)
 
     if (!payload) {
       throw new SE(1, 'No Authorization', null)
     }
-
+    console.log(3)
     if (payload.username) {
       // Add connected client in list.
       if (!connected_clients.hasOwnProperty(payload.username)) {
@@ -59,7 +60,7 @@ const manageConnection = async ctx => {
         console.log(payload.username + ' has been already in Lobby.')
       }
       
-
+      console.log(4)
       // Register Event Listener
       ctx.websocket.on('message', (msg) => {
         // console.log(msg)
@@ -71,7 +72,7 @@ const manageConnection = async ctx => {
           cancelMatch(payload.username)
         }
       })
-
+      console.log(5)
       ctx.websocket.send('Websocket connnect successfully.')
 
     } else {
