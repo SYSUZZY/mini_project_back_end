@@ -21,6 +21,7 @@ class Room {
     owner.room_id = id
     owner.state = 'Ready'
     this.owner = owner
+    this.session_id = undefined
     this.DS_started = false
     this.DS_condition = 1
 
@@ -28,15 +29,26 @@ class Room {
       console.log('Room ' + this.id + ' has ' + this.player_list.length + ' players.')
       if (!this.DS_started) {
         if (this.player_list.length > this.DS_condition) {
-          // Setup DS
-          this.owner.server.websocket.send('CreateSession')
-          this.DS_started = true
+          // Send setup DS command.
+          send_msg = {
+            action: 'CreateSession',
+            session_name: owner.username
+          }
+          this.owner.server.websocket.send(JSON.stringify(send_msg))
         }
       }
       // The room is avaliable.
-      else if (this.state == 'Avaliable') {
+      else if (this.state == 'Avaliable' && this.player_list.length > 0) {
         let cur_player = this.player_list.shift()
-        cur_player.state = 'Ready'
+        if (cur_player != undefined) {
+          cur_player.state = 'Ready'
+          send_msg = {
+            action: 'JoinSession',
+            session_id: this.session_id
+          }
+          cur_player.client.websocket.send(JSON.stringify(send_msg))
+          console.log(cur_player.username + ' join session.')
+        }
       }
       
     }, 1000)
@@ -77,6 +89,9 @@ const manageConnection = async ctx => {
           if (json_msg.action == 'GameComplete') {
             // applyMatch(username)
           }
+          else if (json_msg.action == 'SendSessionId') {
+            setSessionIdForRoom(username, json_msg.session_id)
+          }
         })
   
         ctx.websocket.on('close', ()=> {
@@ -106,6 +121,7 @@ const manageConnection = async ctx => {
           else if (json_msg.action == 'CancelMatch') {
             cancelMatch(username)
           }
+          
         })
   
         ctx.websocket.on('close', ()=> {
@@ -189,6 +205,15 @@ function searchIdleServer() {
     }
   })
   return idle_server
+}
+
+function setSessionIdForRoom(username, session_id) {
+  server = connected_servers[username]
+  console.log(username + ' call setSessionIdForRoom Function.')
+
+  room = room_list[server.room_id]
+  room.session_id = session_id
+  room.DS_started = true
 }
 
 // Lobby server check the waitting queue.
