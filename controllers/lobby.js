@@ -18,7 +18,7 @@ class room {
     this.DS_started = false
 
     var instance = this
-    this.room_server = setInterval(function(instance) {
+    this.room_server = setInterval(()=> {
       console.log('Room ' + instance.room_id + ' has ' + instance.player_list.length + ' players.')
       if (!instance.DS_started) {
         if (instance.player_list.length > instance.start_players) {
@@ -28,9 +28,10 @@ class room {
         }
       }
       // The room is avaliable.
-      if (instance.state == 1) {
+      else if (instance.state == 1) {
         let cur_player = instance.player_list.shift()
       }
+      
       
     }, 1000, instance)
   }
