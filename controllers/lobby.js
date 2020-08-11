@@ -30,7 +30,7 @@ class Room {
       if (!this.DS_started) {
         if (this.player_list.length > this.DS_condition) {
           // Send setup DS command.
-          send_msg = {
+          var send_msg = {
             action: 'CreateSession',
             session_name: owner.username
           }
@@ -42,7 +42,7 @@ class Room {
         let cur_player = this.player_list.shift()
         if (cur_player != undefined) {
           cur_player.state = 'Ready'
-          send_msg = {
+          var send_msg = {
             action: 'JoinSession',
             session_id: this.session_id
           }
