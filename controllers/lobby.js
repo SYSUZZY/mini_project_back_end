@@ -163,7 +163,7 @@ let lobby_server = setInterval(function() {
 
     // Did not find an available room
     if (!add_room_success) {
-      if (room_list.length < max_rooms) {
+      if (Object.keys(room_list).length < max_rooms) {
         let new_room = new Room(history_room_num, 'Avaliable', 3)
         history_room_num += 1
 
