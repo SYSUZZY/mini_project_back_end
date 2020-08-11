@@ -105,7 +105,7 @@ function cancelMatch(username) {
 
   // The client still in waitting list
   if (client.state == 'Waitting') {
-    delete connected_clients[username]
+    
     for (var i = 0; i < waitting_queue.length; i++) {
       if (waitting_queue[i].username == username) {
         waitting_queue.splice(i, 1)
