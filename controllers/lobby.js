@@ -41,16 +41,16 @@ class Room {
 
 
 const manageConnection = async ctx => {
-  console.log(1)
+
   token = ctx.header.authorization
   if (token) {
-    console.log(2)
+
     payload = await tokenUtil.verifyToken(token)
 
     if (!payload) {
       throw new SE(1, 'No Authorization', null)
     }
-    console.log(3)
+
     if (payload.username) {
       // Add connected client in list.
       username = payload.username
@@ -61,7 +61,7 @@ const manageConnection = async ctx => {
         console.log(payload.username + ' has been already in Lobby.')
       }
       
-      console.log(4)
+
       // Register Event Listener
       ctx.websocket.on('message', (msg) => {
         // console.log(msg)
@@ -73,7 +73,7 @@ const manageConnection = async ctx => {
           cancelMatch(payload.username)
         }
       })
-      console.log(5)
+
       ctx.websocket.send('Websocket connnect successfully.')
 
     } else {
@@ -139,14 +139,12 @@ function cancelMatch(username) {
 let lobby_server = setInterval(function() {
 
   console.log(Object.keys(connected_clients))
-
+  
   if (waitting_queue.length > 0) {
     // Find a room and add a player.
     var add_room_success = false
-    for (var r in room_list) {
-
-      if (r.state == 'Avaliable' && r.player_list.length < r.max_players) {
-
+    Object.keys(room_list).every((key)=>{
+      if (room_list[key].state == 'Avaliable' && room_list[key].player_list.length < room_list[key].max_players) {
         // Set the client's info
         cur_client = waitting_queue.shift()
         cur_client.room_id = r.id
@@ -154,12 +152,14 @@ let lobby_server = setInterval(function() {
 
         r.player_list.push(cur_client)
         add_room_success = true
-        
-        console.log(cur_client.username + ' join a room.')
-        break
-      }
 
-    }
+        console.log(cur_client.username + ' join a room.')
+        return false
+      } else {
+        return true
+      }
+    })
+    
 
     // Did not find an available room
     if (!add_room_success) {
