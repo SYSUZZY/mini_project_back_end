@@ -1,9 +1,8 @@
 const SE = require('../utils/systemError')
 const tokenUtil = require('../utils/token')
-const user = require('./user')
-const { updateUser } = require('./user')
 
 connected_clients = {}
+connected_servers = {}
 waitting_queue = []
 room_list = {}
 
@@ -13,12 +12,15 @@ const max_rooms = 2
 
 class Room {
 
-  constructor(id, state, max_players) {
+  constructor(id, state, max_players, owner) {
     this.id = id
     this.state = state
     this.max_players = max_players
     this.player_list = []
 
+    owner.room_id = id
+    owner.state = 'Ready'
+    this.owner = owner
     this.DS_started = false
     this.DS_condition = 1
 
@@ -27,6 +29,7 @@ class Room {
       if (!this.DS_started) {
         if (this.player_list.length > this.DS_condition) {
           // Setup DS
+          this.owner.server.websocket.send('CreateSession')
           this.DS_started = true
         }
       }
@@ -56,34 +59,64 @@ const manageConnection = async ctx => {
     if (payload.username) {
       // Add connected client in list.
       username = payload.username
-      if (!connected_clients.hasOwnProperty(username)) {
-        connected_clients[username] = { username: username, room_id: -1, state: 'Idle', client: ctx }
+
+      // Server connected.
+      if (username.length < 8) {
+        console.log(username + ' connect to server.')
+        if (!connected_servers.hasOwnProperty(username)) {
+          connected_servers[username] = { username: username, room_id: -1, state: 'Idle', server: ctx }
+        }
+        else {
+          console.log(username + ' has been already in Lobby.')
+        }
+
+        // Register Event Listener
+        ctx.websocket.on('message', (msg) => {
+          // console.log(msg)
+          json_msg = JSON.parse(msg)
+          if (json_msg.action == 'GameComplete') {
+            // applyMatch(username)
+          }
+        })
+  
+        ctx.websocket.on('close', ()=> {
+          console.log(username + ' close the websocket.')
+          delete connected_servers[username]
+        })
+  
+        ctx.websocket.send('Websocket connnect successfully.')
       }
+      // Client connected.
       else {
-        console.log(username + ' has been already in Lobby.')
+        if (!connected_clients.hasOwnProperty(username)) {
+          connected_clients[username] = { username: username, room_id: -1, state: 'Idle', client: ctx }
+        }
+        else {
+          console.log(username + ' has been already in Lobby.')
+        }
+        
+  
+        // Register Event Listener
+        ctx.websocket.on('message', (msg) => {
+          // console.log(msg)
+          json_msg = JSON.parse(msg)
+          if (json_msg.action == 'ApplyMatch') {
+            applyMatch(username)
+          }
+          else if (json_msg.action == 'CancelMatch') {
+            cancelMatch(username)
+          }
+        })
+  
+        ctx.websocket.on('close', ()=> {
+          console.log(username + ' close the websocket.')
+          cancelMatch(username)
+          delete connected_clients[username]
+        })
+  
+        ctx.websocket.send('Websocket connnect successfully.')
       }
       
-
-      // Register Event Listener
-      ctx.websocket.on('message', (msg) => {
-        // console.log(msg)
-        json_msg = JSON.parse(msg)
-        if (json_msg.action == 'ApplyMatch') {
-          applyMatch(username)
-        }
-        else if (json_msg.action == 'CancelMatch') {
-          cancelMatch(username)
-        }
-      })
-
-      ctx.websocket.on('close', ()=> {
-        console.log(username + ' close the websocket.')
-        cancelMatch(username)
-        delete connected_clients[username]
-      })
-
-      ctx.websocket.send('Websocket connnect successfully.')
-
     } else {
       throw new SE(1, 'No Authorization', null)
     }
@@ -117,7 +150,7 @@ function cancelMatch(username) {
     for (var i = 0; i < waitting_queue.length; i++) {
       if (waitting_queue[i].username == username) {
         waitting_queue.splice(i, 1)
-        client.state = 'Idel'
+        client.state = 'Idle'
         console.log(username + ' has already canceled the match in waitting queue.')
         break
       }
@@ -129,7 +162,7 @@ function cancelMatch(username) {
     for (var i = 0; i < room.player_list.length; i++) {
       if (room.player_list[i].username == username) {
         room.player_list.splice(i, 1)
-        client.state = 'Idel'
+        client.state = 'Idle'
         console.log(username + ' has already canceled the match in Room ' + room.id + '.')
         break
       }
@@ -138,9 +171,24 @@ function cancelMatch(username) {
   else if (client.state == 'Playing') {
     console.log('The player is playing game.')
   }
-  else if (client.state == 'Idel') {
+  else if (client.state == 'Idle') {
     console.log('The player is not matching.')
   }
+}
+
+// Search a idle server to create a room.
+function searchIdleServer() {
+  idle_server = undefined
+  Object.keys(connected_servers).every((key)=> {
+    if (connected_servers[key].state == 'Idle') {
+      idle_server = connected_servers[key]
+      return false
+    }
+    else {
+      return true
+    }
+  })
+  return idle_server
 }
 
 // Lobby server check the waitting queue.
@@ -172,17 +220,20 @@ let lobby_server = setInterval(function() {
     // Did not find an available room
     if (!add_room_success) {
       if (Object.keys(room_list).length < max_rooms) {
-        let new_room = new Room(history_room_num, 'Avaliable', 3)
-        history_room_num += 1
+        room_owner = searchIdleServer()
+        if (room_owner != undefined) {
+          let new_room = new Room(history_room_num, 'Avaliable', 3, room_owner)
+          history_room_num += 1
 
-        cur_client = waitting_queue.shift()
-        cur_client.room_id = new_room.id
-        cur_client.state = 'Ready'
+          cur_client = waitting_queue.shift()
+          cur_client.room_id = new_room.id
+          cur_client.state = 'Ready'
 
-        new_room.player_list.push(cur_client)
-        room_list[new_room.id] = new_room
-        console.log('Server create a new room.')
-        console.log(cur_client.username + ' join a room.')
+          new_room.player_list.push(cur_client)
+          room_list[new_room.id] = new_room
+          console.log('Server create a new room.')
+          console.log(cur_client.username + ' join a room.')
+        }
       }
     }
   }
