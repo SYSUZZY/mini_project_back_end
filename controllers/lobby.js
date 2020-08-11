@@ -3,37 +3,83 @@ const tokenUtil = require('../utils/token')
 
 connected_clients = {}
 waitting_queue = []
-room_list = []
+room_list = {}
+
+history_room_num = 0
 
 const max_rooms = 2
 
-class room {
+class Room {
 
-  constructor(room_id, state, max_players) {
-    this.room_id = room_id
+  constructor(id, state, max_players) {
+    this.id = id
     this.state = state
     this.max_players = max_players
-    this.start_players = 1
     this.player_list = []
-    this.DS_started = false
 
-    var instance = this
+    this.DS_started = false
+    this.DS_condition = 1
+
     this.room_server = setInterval(()=> {
-      console.log('Room ' + instance.room_id + ' has ' + instance.player_list.length + ' players.')
-      if (!instance.DS_started) {
-        if (instance.player_list.length > instance.start_players) {
+      console.log('Room ' + this.id + ' has ' + this.player_list.length + ' players.')
+      if (!this.DS_started) {
+        if (this.player_list.length > this.DS_condition) {
           // Setup DS
-          instance.DS_started = true
-          instance.state = 1
+          this.DS_started = true
         }
       }
       // The room is avaliable.
-      else if (instance.state == 1) {
-        let cur_player = instance.player_list.shift()
+      else if (this.state == 'Avaliable') {
+        let cur_player = this.player_list.shift()
+        cur_player.state = 'Ready'
       }
       
+    }, 1000)
+  }
+}
+
+
+
+const manageConnection = async ctx => {
+
+  token = ctx.header.authorization
+  if (token) {
+    payload = await tokenUtil.verifyToken(token)
+
+    if (!payload) {
+      throw new SE(1, 'No Authorization', null)
+    }
+
+    if (payload.username) {
+      // Add connected client in list.
+      if (!connected_clients.hasOwnProperty(payload.username)) {
+        connected_clients[payload.username] = { username: payload.username, room_id: -1, state: 'Idle', client: ctx }
+      }
+      else {
+        console.log(payload.username + ' has been already in Lobby.')
+      }
       
-    }, 1000, instance)
+
+      // Register Event Listener
+      ctx.websocket.on('message', (msg) => {
+        // console.log(msg)
+        json_msg = JSON.parse(msg)
+        if (json_msg.action == 'ApplyMatch') {
+          applyMatch(payload.username)
+        }
+        else if (json_msg.action == 'CancelMatch') {
+          cancelMatch(payload.username)
+        }
+      })
+
+      ctx.websocket.send('Websocket connnect successfully.')
+
+    } else {
+      throw new SE(1, 'No Authorization', null)
+    }
+  }
+  else {
+    console.log('have not token')
   }
 }
 
@@ -50,67 +96,70 @@ function applyMatch(username) {
   }
 }
 
-const manageConnection = async ctx => {
+function cancelMatch(username) {
 
-  token = ctx.header.authorization
-  if (token) {
-    payload = await tokenUtil.verifyToken(token)
+  client = connected_clients[username]
 
-    if (!payload) {
-      throw new SE(1, 'No Authorization', null)
-    }
-
-    if (payload.username) {
-      // Add connected client in list.
-      connected_clients[payload.username] = ctx
-
-      // Register Event Listener
-      ctx.websocket.on('message', (msg) => {
-        // console.log(msg)
-        json_msg = JSON.parse(msg)
-        if (json_msg.action == 'ApplyMatch') {
-          applyMatch(payload.username)
-        }
-      })
-
-      ctx.websocket.send('Websocket connnect successfully.')
-
-    } else {
-      throw new SE(1, 'No Authorization', null)
+  // The client still in waitting list
+  if (client.state == 'Waitting') {
+    delete connected_clients[username]
+  }
+  else if (client.state == 'Ready') {
+    room = room_list[client.room_id]
+    for (var i = 0; i < room.player_list.length; i++) {
+      if (room.player_list[i].username == username) {
+        room.player_list.splice(i, 1)
+        client.state = 'Idel'
+        break
+      }
     }
   }
-  else {
-    console.log('have not token')
+  else if (client.state == 'Playing') {
+    console.log('The player is playing game.')
+  }
+  else if (client.state == 'Idel') {
+    console.log('The player is not matching.')
   }
 }
 
 // Lobby server check the waitting queue.
 let lobby_server = setInterval(function() {
 
+  console.log(connected_clients)
+
   if (waitting_queue.length > 0) {
     // Find a room and add a player.
-    let add_room_success = false
-    room_list.every(r => {
-      if (r.state == 1 && r.player_list.length < r.max_players) {
+    var add_room_success = false
+    for (var r in room_list) {
+
+      if (r.state == 'Avaliable' && r.player_list.length < r.max_players) {
+
+        // Set the client's info
         cur_client = waitting_queue.shift()
+        cur_client.room_id = r.id
+        cur_client.state = 'Ready'
+
         r.player_list.push(cur_client)
         add_room_success = true
-
+        
         console.log(cur_client.username + ' join a room.')
-
-        return false
-      } else {
-        return true
+        break
       }
-    });
+
+    }
 
     // Did not find an available room
     if (!add_room_success) {
       if (room_list.length < max_rooms) {
-        let new_room = new room(room_list.length, 1, 3)
+        let new_room = new Room(history_room_num, 'Avaliable', 3)
+        history_room_num += 1
+
         cur_client = waitting_queue.shift()
+        cur_client.room_id = new_room.id
+        cur_client.state = 'Ready'
+
         new_room.player_list.push(cur_client)
-        room_list.push(new_room)
+        room_list[new_room.id] = new_room
         console.log('Server create a new room.')
         console.log(cur_client.username + ' join a room.')
       }
