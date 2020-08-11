@@ -53,9 +53,9 @@ const manageConnection = async ctx => {
     console.log(3)
     if (payload.username) {
       // Add connected client in list.
-      if (!connected_clients.hasOwnProperty(payload.username)) {
-        // connected_clients[payload.username] = { username: payload.username, room_id: -1, state: 'Idle', client: ctx }
-        console.log(3.5)
+      username = payload.username
+      if (!connected_clients.hasOwnProperty(username)) {
+        connected_clients[payload.username] = { username: username, room_id: -1, state: 'Idle', client: ctx }
       }
       else {
         console.log(payload.username + ' has been already in Lobby.')
@@ -69,9 +69,9 @@ const manageConnection = async ctx => {
         if (json_msg.action == 'ApplyMatch') {
           applyMatch(payload.username)
         }
-        // else if (json_msg.action == 'CancelMatch') {
-        //   cancelMatch(payload.username)
-        // }
+        else if (json_msg.action == 'CancelMatch') {
+          cancelMatch(payload.username)
+        }
       })
       console.log(5)
       ctx.websocket.send('Websocket connnect successfully.')
@@ -137,7 +137,7 @@ function cancelMatch(username) {
 // Lobby server check the waitting queue.
 let lobby_server = setInterval(function() {
 
-  console.log(connected_clients)
+  console.log(Object.keys(connected_clients))
 
   if (waitting_queue.length > 0) {
     // Find a room and add a player.
