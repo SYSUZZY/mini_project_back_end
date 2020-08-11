@@ -55,10 +55,10 @@ const manageConnection = async ctx => {
       // Add connected client in list.
       username = payload.username
       if (!connected_clients.hasOwnProperty(username)) {
-        connected_clients[payload.username] = { username: username, room_id: -1, state: 'Idle', client: ctx }
+        connected_clients[username] = { username: username, room_id: -1, state: 'Idle', client: ctx }
       }
       else {
-        console.log(payload.username + ' has been already in Lobby.')
+        console.log(username + ' has been already in Lobby.')
       }
       
 
@@ -67,10 +67,10 @@ const manageConnection = async ctx => {
         // console.log(msg)
         json_msg = JSON.parse(msg)
         if (json_msg.action == 'ApplyMatch') {
-          applyMatch(payload.username)
+          applyMatch(username)
         }
         else if (json_msg.action == 'CancelMatch') {
-          cancelMatch(payload.username)
+          cancelMatch(username)
         }
       })
 
@@ -105,7 +105,7 @@ function cancelMatch(username) {
 
   // The client still in waitting list
   if (client.state == 'Waitting') {
-    
+
     for (var i = 0; i < waitting_queue.length; i++) {
       if (waitting_queue[i].username == username) {
         waitting_queue.splice(i, 1)
