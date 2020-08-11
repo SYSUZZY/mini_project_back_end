@@ -68,9 +68,9 @@ const manageConnection = async ctx => {
         if (json_msg.action == 'ApplyMatch') {
           applyMatch(payload.username)
         }
-        else if (json_msg.action == 'CancelMatch') {
-          cancelMatch(payload.username)
-        }
+        // else if (json_msg.action == 'CancelMatch') {
+        //   cancelMatch(payload.username)
+        // }
       })
       console.log(5)
       ctx.websocket.send('Websocket connnect successfully.')
