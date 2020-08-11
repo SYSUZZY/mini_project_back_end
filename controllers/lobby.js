@@ -1,5 +1,7 @@
 const SE = require('../utils/systemError')
 const tokenUtil = require('../utils/token')
+const user = require('./user')
+const { updateUser } = require('./user')
 
 connected_clients = {}
 waitting_queue = []
@@ -72,6 +74,12 @@ const manageConnection = async ctx => {
         else if (json_msg.action == 'CancelMatch') {
           cancelMatch(username)
         }
+      })
+
+      ctx.websocket.on('close', ()=> {
+        console.log(username + ' close the websocket.')
+        cancelMatch(username)
+        delete connected_clients[username]
       })
 
       ctx.websocket.send('Websocket connnect successfully.')
