@@ -103,6 +103,15 @@ function cancelMatch(username) {
   // The client still in waitting list
   if (client.state == 'Waitting') {
     delete connected_clients[username]
+    for (var i = 0; i < waitting_queue.length; i++) {
+      if (waitting_queue[i].username == username) {
+        waitting_queue.splice(i, 1)
+        client.state = 'Idel'
+        console.log(username + ' has already canceled the match in waitting queue.')
+        break
+      }
+    }
+    
   }
   else if (client.state == 'Ready') {
     room = room_list[client.room_id]
@@ -110,6 +119,7 @@ function cancelMatch(username) {
       if (room.player_list[i].username == username) {
         room.player_list.splice(i, 1)
         client.state = 'Idel'
+        console.log(username + ' has already canceled the match in Room ' + room.room_id + '.')
         break
       }
     }
