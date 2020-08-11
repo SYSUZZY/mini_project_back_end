@@ -86,7 +86,7 @@ const manageConnection = async ctx => {
 }
 
 function applyMatch(username) {
-  client = { username: username, context: connected_clients[username] }
+  client = connected_clients[username]
   console.log(username + ' call Apply Match Function.')
   console.log(waitting_queue.length)
   if (!waitting_queue.includes(client)) {
@@ -101,6 +101,7 @@ function applyMatch(username) {
 function cancelMatch(username) {
 
   client = connected_clients[username]
+  console.log(username + ' call Apply Match Function.')
 
   // The client still in waitting list
   if (client.state == 'Waitting') {
