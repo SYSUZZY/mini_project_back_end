@@ -87,7 +87,7 @@ const manageConnection = async ctx => {
 
 function applyMatch(username) {
   client = connected_clients[username]
-  console.log(username + ' call Apply Match Function.')
+  console.log(client.username + ' call Apply Match Function.')
   console.log(waitting_queue.length)
   if (!waitting_queue.includes(client)) {
     waitting_queue.push(client)
@@ -122,7 +122,7 @@ function cancelMatch(username) {
       if (room.player_list[i].username == username) {
         room.player_list.splice(i, 1)
         client.state = 'Idel'
-        console.log(username + ' has already canceled the match in Room ' + room.room_id + '.')
+        console.log(username + ' has already canceled the match in Room ' + room.id + '.')
         break
       }
     }
@@ -147,10 +147,10 @@ let lobby_server = setInterval(function() {
       if (room_list[key].state == 'Avaliable' && room_list[key].player_list.length < room_list[key].max_players) {
         // Set the client's info
         cur_client = waitting_queue.shift()
-        cur_client.room_id = r.id
+        cur_client.room_id = room_list[key].id
         cur_client.state = 'Ready'
 
-        r.player_list.push(cur_client)
+        room_list[key].player_list.push(cur_client)
         add_room_success = true
 
         console.log(cur_client.username + ' join a room.')
