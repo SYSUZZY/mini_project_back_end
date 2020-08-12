@@ -59,23 +59,23 @@ class Room {
 
 const manageConnection = async ctx => {
 
-  token = ctx.header.authorization
+  let token = ctx.header.authorization
+  let username = ctx.params.username
+
   if (token) {
 
-    payload = await tokenUtil.verifyToken(token)
+    let payload = await tokenUtil.verifyToken(token)
 
     if (!payload) {
       throw new SE(1, 'No Authorization', null)
     }
 
-    if (payload.username) {
-      // Add connected client in list.
-      username = payload.username
-
+    if (payload.username == username && payload.username != undefined) {
       // Server connected.
       if (username.length < 8) {
         console.log(username + ' connect to server.')
         if (!connected_servers.hasOwnProperty(username)) {
+          // Bind the username to websocket
           connected_servers[username] = { username: username, room_id: -1, state: 'Idle', server: ctx }
         }
         else {
@@ -84,8 +84,8 @@ const manageConnection = async ctx => {
 
         // Register Event Listener
         ctx.websocket.on('message', (msg) => {
-          // console.log(msg)
-          json_msg = JSON.parse(msg)
+          let username = ctx.params.username
+          console.log('User: '+username+' send a message.')
           if (json_msg.action == 'GameComplete') {
             // applyMatch(username)
           }
@@ -95,6 +95,7 @@ const manageConnection = async ctx => {
         })
   
         ctx.websocket.on('close', ()=> {
+          let username = ctx.params.username
           console.log(username + ' close the websocket.')
           delete connected_servers[username]
         })
@@ -104,6 +105,7 @@ const manageConnection = async ctx => {
       // Client connected.
       else {
         if (!connected_clients.hasOwnProperty(username)) {
+          console.log(username + ' connect to server.')
           connected_clients[username] = { username: username, room_id: -1, state: 'Idle', client: ctx }
         }
         else {
@@ -114,6 +116,7 @@ const manageConnection = async ctx => {
         // Register Event Listener
         ctx.websocket.on('message', (msg) => {
           // console.log(msg)
+          let username = ctx.params.username
           json_msg = JSON.parse(msg)
           if (json_msg.action == 'ApplyMatch') {
             applyMatch(username)
@@ -125,6 +128,7 @@ const manageConnection = async ctx => {
         })
   
         ctx.websocket.on('close', ()=> {
+          let username = ctx.params.username
           console.log(username + ' close the websocket.')
           cancelMatch(username)
           delete connected_clients[username]
@@ -132,7 +136,6 @@ const manageConnection = async ctx => {
   
         ctx.websocket.send('Websocket connnect successfully.')
       }
-      
     } else {
       throw new SE(1, 'No Authorization', null)
     }
@@ -141,6 +144,8 @@ const manageConnection = async ctx => {
     console.log('have not token')
   }
 }
+
+
 
 function applyMatch(username) {
   client = connected_clients[username]
