@@ -1,7 +1,5 @@
 const SE = require('../utils/systemError')
 const tokenUtil = require('../utils/token')
-const { client } = require('../utils/redis')
-const { delete } = require('../routes/user')
 
 connected_clients = {}
 connected_servers = {}
