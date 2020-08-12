@@ -87,6 +87,8 @@ const manageConnection = async ctx => {
           let username = ctx.params.username
           console.log('User: '+username+' send a message.')
           let json_msg = JSON.parse(msg)
+          console.log(msg)
+          console.log(json_msg)
           if (json_msg.action == 'GameComplete') {
             // applyMatch(username)
           }
