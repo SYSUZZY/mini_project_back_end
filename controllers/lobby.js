@@ -1,5 +1,6 @@
 const SE = require('../utils/systemError')
 const tokenUtil = require('../utils/token')
+const { delete } = require('../routes/user')
 
 connected_clients = {}
 connected_servers = {}
@@ -17,6 +18,7 @@ class Room {
     this.state = state
     this.max_players = max_players
     this.player_list = []
+    this.in_game_players = {}
 
     owner.room_id = id
     owner.state = 'Ready'
@@ -38,10 +40,11 @@ class Room {
         }
       }
       // The room is avaliable.
-      else if (this.state == 'Avaliable' && this.player_list.length > 0) {
+      else if (this.state == 'Available' && this.player_list.length > 0) {
         let cur_player = this.player_list.shift()
         if (cur_player != undefined) {
           cur_player.state = 'Ready'
+          this.in_game_players[cur_player.username] = cur_player
           var send_msg = {
             action: 'JoinSession',
             session_id: this.session_id
@@ -89,12 +92,17 @@ const manageConnection = async ctx => {
           let json_msg = JSON.parse(msg)
           console.log(msg)
           console.log(json_msg)
-          if (json_msg.action == 'GameComplete') {
-            // applyMatch(username)
+          if (json_msg.action == 'GameCompleted') {
+            console.log('Game complete.')
+            gameCompleteSetting(username)
           }
           else if (json_msg.action == 'SendSessionId') {
             console.log(json_msg.session_id)
             setSessionIdForRoom(username, json_msg.session_id)
+          }
+          else if (json_msg.action == 'GameStarted') {
+            console.log('Game start')
+            setStateOfRoomAndPlayer(username)
           }
         })
   
@@ -180,7 +188,6 @@ function cancelMatch(username) {
         break
       }
     }
-    
   }
   else if (client.state == 'Ready') {
     room = room_list[client.room_id]
@@ -225,6 +232,38 @@ function setSessionIdForRoom(username, session_id) {
   room.DS_started = true
 }
 
+function setStateOfRoomAndPlayer(username) {
+  server = connected_servers[username]
+  console.log(username + ' call setStateOfRoomAndPlayer Function.')
+
+  room = room_list[server.room_id]
+  room.state = 'Unavailable'
+  room.owner.state = 'Playing'
+  Object.keys(room.in_game_players).forEach((key) => {
+    room.in_game_players[key].state = 'Playing'
+  })
+}
+
+
+function gameCompleteSetting(username) {
+  server = connected_servers[username]
+  console.log(username + ' call gameCompleteSetting Function.')
+
+  room = room_list[server.room_id]
+  Object.keys(room.in_game_players).forEach((key) => {
+    if (!room.in_game_players[key]) {
+      room.in_game_players[key].state = 'Idle'
+      room.in_game_players[key].room_id = undefined
+      delete room.in_game_players[key]
+    }
+  })
+  room.owner.state = 'Ready'
+  room.player_list = []
+  room.in_game_players = {}
+  room.session_id = undefined
+  room.DS_started = false
+}
+
 // Lobby server check the waitting queue.
 let lobby_server = setInterval(function() {
 
@@ -234,7 +273,7 @@ let lobby_server = setInterval(function() {
     // Find a room and add a player.
     var add_room_success = false
     Object.keys(room_list).every((key)=>{
-      if (room_list[key].state == 'Avaliable' && room_list[key].player_list.length < room_list[key].max_players) {
+      if (room_list[key].state == 'Available' && room_list[key].player_list.length < room_list[key].max_players) {
         // Set the client's info
         cur_client = waitting_queue.shift()
         cur_client.room_id = room_list[key].id
@@ -256,7 +295,7 @@ let lobby_server = setInterval(function() {
       if (Object.keys(room_list).length < max_rooms) {
         room_owner = searchIdleServer()
         if (room_owner != undefined) {
-          let new_room = new Room(history_room_num, 'Avaliable', 3, room_owner)
+          let new_room = new Room(history_room_num, 'Available', 3, room_owner)
           history_room_num += 1
 
           cur_client = waitting_queue.shift()
