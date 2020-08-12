@@ -90,6 +90,7 @@ const manageConnection = async ctx => {
             // applyMatch(username)
           }
           else if (json_msg.action == 'SendSessionId') {
+            console.log(json_msg.session_id)
             setSessionIdForRoom(username, json_msg.session_id)
           }
         })
