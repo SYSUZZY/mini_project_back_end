@@ -1,6 +1,7 @@
 const SE = require('../utils/systemError')
 const tokenUtil = require('../utils/token')
 const { client } = require('../utils/redis')
+const { delete } = require('../routes/user')
 
 connected_clients = {}
 connected_servers = {}
@@ -272,11 +273,11 @@ function gameCompleteSetting(username) {
       delete room.in_game_players[key]
     }
   })
-  room.owner.state = 'Ready'
-  room.player_list = []
-  room.in_game_players = {}
-  room.session_id = undefined
-  room.DS_started = false
+  clearInterval(room.room_server)
+  if (room_list[server.room_id]) {
+    delete room_list[server.room_id]
+  }
+  server.state = 'Idle'
 }
 
 // Lobby server check the waitting queue.
