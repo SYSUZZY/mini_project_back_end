@@ -86,6 +86,7 @@ const manageConnection = async ctx => {
         ctx.websocket.on('message', (msg) => {
           let username = ctx.params.username
           console.log('User: '+username+' send a message.')
+          let json_msg = JSON.parse(msg)
           if (json_msg.action == 'GameComplete') {
             // applyMatch(username)
           }
@@ -118,7 +119,7 @@ const manageConnection = async ctx => {
         ctx.websocket.on('message', (msg) => {
           // console.log(msg)
           let username = ctx.params.username
-          json_msg = JSON.parse(msg)
+          let json_msg = JSON.parse(msg)
           if (json_msg.action == 'ApplyMatch') {
             applyMatch(username)
           }
