@@ -177,7 +177,7 @@ function applyMatch(username) {
 function cancelMatch(username) {
 
   let client = connected_clients[username]
-  console.log(username + ' call Apply Match Function.')
+  console.log(username + ' call Cancel Match Function.')
 
   // The client still in waitting list
   if (client.state == 'Waitting') {
@@ -212,7 +212,7 @@ function cancelMatch(username) {
 
 function endGame(username) {
   let client = connected_clients[username]
-  console.log(username + ' call Apply Match Function.')
+  console.log(username + ' call End Game Function.')
 
   let room = room_list[client.room_id]
   if (room.in_game_players[client.username]) {
