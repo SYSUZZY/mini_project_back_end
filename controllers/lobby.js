@@ -225,7 +225,7 @@ function setSessionIdForRoom(username, session_id) {
 // Lobby server check the waitting queue.
 let lobby_server = setInterval(function() {
 
-  console.log(Object.keys(connected_clients))
+  // console.log(Object.keys(connected_clients))
   
   if (waitting_queue.length > 0) {
     // Find a room and add a player.
