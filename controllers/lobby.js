@@ -343,7 +343,7 @@ function resetHealth(username) {
 let health_monitor = setInterval( () => {
   Object.keys(connected_clients).forEach( (key) => {
     if (connected_clients[key].health <= 0) {
-      clientDied(key)
+      clientDead(key)
     }
   })
 
