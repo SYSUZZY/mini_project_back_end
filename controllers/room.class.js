@@ -1,4 +1,3 @@
-
 class Room {
   
   constructor(id, state, owner, setting) {
