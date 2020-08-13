@@ -32,7 +32,7 @@ const manageConnection = async ctx => {
         if (!connected_servers.hasOwnProperty(username)) {
           // Bind the username to websocket
           // The state of manager: Busy & Idle
-          connected_servers[username] = { username: username, room_id: undefined, state: 'Idle', server: ctx }
+          connected_servers[username] = { username: username, room_id: undefined, state: 'Idle', server: ctx, health: 20 }
         }
         else {
           console.log(username + ' has been already in Lobby.')
@@ -56,6 +56,9 @@ const manageConnection = async ctx => {
           else if (json_msg.action == 'GameStarted') {
             setRoomState(username)
           }
+          else if (json_msg.action == 'HeartBeat') {
+            resetHealth(username)
+          }
         })
   
         ctx.websocket.on('close', ()=> {
@@ -73,7 +76,7 @@ const manageConnection = async ctx => {
 
         if (!connected_clients.hasOwnProperty(username)) {
           // The state of client: Idle & Waitting & Ready & Playing
-          connected_clients[username] = { username: username, room_id: undefined, state: 'Idle', client: ctx }
+          connected_clients[username] = { username: username, room_id: undefined, state: 'Idle', client: ctx, health: 20 }
         }
         else {
           console.log(username + ' has been already in Lobby.')
@@ -95,6 +98,9 @@ const manageConnection = async ctx => {
           }
           else if (json_msg.action == 'EndGame') {
             endGame(username)
+          }
+          else if (json_msg.action == 'HeartBeat') {
+            resetHealth(username)
           }
         })
   
@@ -213,7 +219,6 @@ function setSessionIdForRoom(username, session_id) {
 
   let server = connected_servers[username]
   let room = room_list[server.room_id]
-  console.log('!!!!!!!!!!!!!!!!!!!!!!!1' + room.state_DS)
   room.state_DS = 'Awake'
   room.session_id = session_id
   
@@ -250,9 +255,109 @@ function gameCompleteSetting(username) {
   server.state = 'Idle'
 }
 
-// Lobby server.
-let lobby_server = setInterval(function() {
+// Lobby Function
+
+// Reset health
+function resetHealth(username) {
+  console.log(username + ' is alive.')
+  if (connected_servers[username]) {
+    connected_servers[username].health = 20
+  }
+  if (connected_clients[username]) {
+    connected_clients[username].health = 20
+  }
+
+}
+
+// Check connected client's health
+let health_monitor = setInterval( () => {
+  Object.keys(connected_clients).forEach( (key) => {
+
+    if (connected_clients[key].health <= 0) {
+      console.log(key + ' is dead.')
+      if (connected_clients[key].state == 'Waitting') {
+
+        for (let i = 0; i < waitting_queue.length; i++) {
+          if (waitting_queue[i].username == key) {
+            waitting_queue.splice(i, 1)
+            break
+          }
+        }
+
+      }
+      else if (connected_clients[key].state == 'Ready') {
+
+        let room = room_list[connected_clients[key].room_id]
+        for (let i = 0; i < room.waitting_queue.length; i++) {
+          if (room.waitting_queue[i].username == key) {
+            room.waitting_queue.splice(i, 1)
+            break
+          }
+        }
+    
+      }
+      else if (connected_clients[key].state == 'Playing') {
+
+        let room = room_list[connected_clients[key].room_id]
+        if (room.players_list[key]) {
+          delete room.players_list[key]
+        }
+
+      }
+      delete connected_clients[key]
+    }
+  })
+
+  Object.keys(connected_servers).forEach( (key) => {
+
+    if (connected_servers[key].health <= 0) {
+      console.log(key + ' is dead.')
+      if (connected_servers[key].state == 'Busy') {
+
+        let room = room_list[connected_servers[key].room_id]
+
+        // Kick out players
+        Object.keys(room.players_list).forEach( (key) => {
+
+          if (room.players_list[key]) {
+            room.players_list[key].state = 'Idle'
+            room.players_list[key].room_id = undefined
+            delete room.players_list[key]
+          }
+
+        })
+        for (let i = 0; i < room.waitting_queue.length; i++) {
+          room.waitting_queue[i].state = 'Idle'
+          room.waitting_queue[i].room_id = undefined
+        }
+
+        // Delete room
+        delete room_list[room.id]
+      }
+
+      delete connected_servers[key]
+
+    }
+
+  })
   
+}, 5000)
+
+// Damage on client
+function applyDamage() {
+  Object.keys(connected_clients).forEach( (key) => {
+    connected_clients[key].health -= 1
+  })
+  Object.keys(connected_servers).forEach( (key) => {
+    connected_servers[key].health -= 1
+  })
+}
+
+// Lobby server.
+let lobby_server = setInterval( () => {
+  
+  applyDamage()
+
   if (waitting_queue.length > 0) {
 
     // Find a room and add a player.

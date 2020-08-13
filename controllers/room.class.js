@@ -34,7 +34,7 @@ class Room {
           // Send setup DS command.
           let send_msg = {
             action: 'CreateSession',
-            session_name: owner.username
+            session_name: this.owner.username
           }
           this.owner.server.websocket.send(JSON.stringify(send_msg))
           // Debug
