@@ -335,6 +335,7 @@ let health_monitor = setInterval( () => {
           if (room.players_list[key]) {
             room.players_list[key].state = 'Idle'
             room.players_list[key].room_id = undefined
+            clearInterval(room.room_server)
             delete room.players_list[key]
           }
 
