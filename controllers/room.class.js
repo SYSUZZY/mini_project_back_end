@@ -25,6 +25,8 @@ class Room {
       }
 
       // Check the state of DS server.
+      // Debug
+      console.log('state_DS: ' + this.state_DS)
       if (this.state_DS == 'Sleep') {
 
         // Satisfy the setup condition.
@@ -35,6 +37,8 @@ class Room {
             session_name: owner.username
           }
           this.owner.server.websocket.send(JSON.stringify(send_msg))
+          // Debug
+          console.log('Send_Msg: ' + JSON.stringify(send_msg))
         }
       }
       // The DS has been built and there is somebody in waitting queue and the room is ready.

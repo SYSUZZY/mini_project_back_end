@@ -248,7 +248,6 @@ function gameCompleteSetting(username) {
     delete room_list[server.room_id]
   }
   server.state = 'Idle'
-
 }
 
 // Lobby server.
