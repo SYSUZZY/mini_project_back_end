@@ -66,6 +66,4 @@ class Room {
 
 }
 
-module.export = { 
-  Room
-}
+module.export = Room

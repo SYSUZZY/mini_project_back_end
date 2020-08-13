@@ -1,5 +1,4 @@
-const Room = require('./room').Room
-
+var Room = require('./room.class')
 const tokenUtil = require('../utils/token')
 
 var connected_clients = {}
