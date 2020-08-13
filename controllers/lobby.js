@@ -1,4 +1,5 @@
 var Room = require('./room.class')
+const config = require('../config')
 const tokenUtil = require('../utils/token')
 
 var connected_clients = {}
@@ -32,7 +33,13 @@ const manageConnection = async ctx => {
         if (!connected_servers.hasOwnProperty(username)) {
           // Bind the username to websocket
           // The state of manager: Busy & Idle
-          connected_servers[username] = { username: username, room_id: undefined, state: 'Idle', server: ctx, health: 20 }
+          connected_servers[username] = { 
+            username: username, 
+            room_id: undefined, 
+            state: 'Idle', 
+            server: ctx, 
+            health: config.CONNECTED_HEALTH
+          }
         }
         else {
           console.log(username + ' has been already in Lobby.')
@@ -76,7 +83,13 @@ const manageConnection = async ctx => {
 
         if (!connected_clients.hasOwnProperty(username)) {
           // The state of client: Idle & Waitting & Ready & Playing
-          connected_clients[username] = { username: username, room_id: undefined, state: 'Idle', client: ctx, health: 20 }
+          connected_clients[username] = { 
+            username: username, 
+            room_id: undefined, 
+            state: 'Idle', 
+            client: ctx, 
+            health: config.CONNECTED_HEALTH 
+          }
         }
         else {
           console.log(username + ' has been already in Lobby.')
@@ -261,10 +274,10 @@ function gameCompleteSetting(username) {
 function resetHealth(username) {
   console.log(username + ' is alive.')
   if (connected_servers[username]) {
-    connected_servers[username].health = 20
+    connected_servers[username].health = config.CONNECTED_HEALTH
   }
   if (connected_clients[username]) {
-    connected_clients[username].health = 20
+    connected_clients[username].health = config.CONNECTED_HEALTH
   }
 
 }
