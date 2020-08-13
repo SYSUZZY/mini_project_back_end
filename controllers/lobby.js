@@ -1,62 +1,13 @@
-const SE = require('../utils/systemError')
+import { Room } from 'room'
+
 const tokenUtil = require('../utils/token')
 
-connected_clients = {}
-connected_servers = {}
-waitting_queue = []
-room_list = {}
+var connected_clients = {}
+var connected_servers = {}
+var waitting_queue = []
+var room_list = {}
 
-history_room_num = 0
-
-const max_rooms = 2
-
-class Room {
-
-  constructor(id, state, max_players, owner) {
-    this.id = id
-    this.state = state
-    this.max_players = max_players
-    this.player_list = []
-    this.in_game_players = {}
-
-    owner.room_id = id
-    owner.state = 'Ready'
-    this.owner = owner
-    this.session_id = undefined
-    this.DS_started = false
-    this.DS_condition = 1
-
-    this.room_server = setInterval(()=> {
-      console.log('Room ' + this.id + ' has ' + this.player_list.length + ' players.')
-      if (!this.DS_started) {
-        if (this.player_list.length > this.DS_condition) {
-          // Send setup DS command.
-          var send_msg = {
-            action: 'CreateSession',
-            session_name: owner.username
-          }
-          this.owner.server.websocket.send(JSON.stringify(send_msg))
-        }
-      }
-      // The room is avaliable.
-      else if (this.state == 'Available' && this.player_list.length > 0) {
-        let cur_player = this.player_list.shift()
-        if (cur_player != undefined) {
-          cur_player.state = 'Ready'
-          this.in_game_players[cur_player.username] = cur_player
-          var send_msg = {
-            action: 'JoinSession',
-            session_id: this.session_id
-          }
-          cur_player.client.websocket.send(JSON.stringify(send_msg))
-          console.log(cur_player.username + ' join session.')
-        }
-      }
-      
-    }, 1000)
-  }
-}
-
+var history_room_num = 0
 
 
 const manageConnection = async ctx => {
@@ -69,16 +20,20 @@ const manageConnection = async ctx => {
     let payload = await tokenUtil.verifyToken(token)
 
     if (!payload) {
-      throw new SE(1, 'No Authorization', null)
+      console.log('No Authorization')
     }
 
     if (payload.username == username && payload.username != undefined) {
+
       // Server connected.
       if (username.length < 8) {
+
         console.log(username + ' connect to server.')
+
         if (!connected_servers.hasOwnProperty(username)) {
           // Bind the username to websocket
-          connected_servers[username] = { username: username, room_id: -1, state: 'Idle', server: ctx }
+          // The state of manager: Busy & Idle
+          connected_servers[username] = { username: username, room_id: undefined, state: 'Idle', server: ctx }
         }
         else {
           console.log(username + ' has been already in Lobby.')
@@ -86,22 +41,21 @@ const manageConnection = async ctx => {
 
         // Register Event Listener
         ctx.websocket.on('message', (msg) => {
+
           let username = ctx.params.username
-          console.log('User: '+username+' send a message.')
           let json_msg = JSON.parse(msg)
-          console.log(msg)
-          console.log(json_msg)
+
+          console.log('User: ' + username + ' Message: ' + msg)
+          
           if (json_msg.action == 'GameCompleted') {
-            console.log('Game complete.')
             gameCompleteSetting(username)
           }
           else if (json_msg.action == 'SendSessionId') {
-            console.log(json_msg.session_id)
+            console.log('Session ID: ' + json_msg.session_id)
             setSessionIdForRoom(username, json_msg.session_id)
           }
           else if (json_msg.action == 'GameStarted') {
-            console.log('Game start')
-            setStateOfRoomAndPlayer(username)
+            setRoomState(username)
           }
         })
   
@@ -115,20 +69,25 @@ const manageConnection = async ctx => {
       }
       // Client connected.
       else {
+
+        console.log(username + ' connect to server.')
+
         if (!connected_clients.hasOwnProperty(username)) {
-          console.log(username + ' connect to server.')
-          connected_clients[username] = { username: username, room_id: -1, state: 'Idle', client: ctx }
+          // The state of client: Idle & Waitting & Ready & Playing
+          connected_clients[username] = { username: username, room_id: undefined, state: 'Idle', client: ctx }
         }
         else {
           console.log(username + ' has been already in Lobby.')
         }
-        
   
         // Register Event Listener
         ctx.websocket.on('message', (msg) => {
-          // console.log(msg)
+          
           let username = ctx.params.username
           let json_msg = JSON.parse(msg)
+
+          console.log('User: ' + username + ' Message: ' + msg)
+
           if (json_msg.action == 'ApplyMatch') {
             applyMatch(username)
           }
@@ -141,6 +100,7 @@ const manageConnection = async ctx => {
         })
   
         ctx.websocket.on('close', ()=> {
+          // TODO: Add a close socket function
           let username = ctx.params.username
           console.log(username + ' close the websocket.')
           cancelMatch(username)
@@ -150,33 +110,37 @@ const manageConnection = async ctx => {
         ctx.websocket.send('Websocket connnect successfully.')
       }
     } else {
-      throw new SE(1, 'No Authorization', null)
+      console.log('No Authorization')
     }
   }
   else {
-    console.log('have not token')
+    console.log('Have not token')
   }
 }
 
+// Client Functions
 
-
+// Apply match
 function applyMatch(username) {
+
   let client = connected_clients[username]
-  console.log(client.username + ' call Apply Match Function.')
-  console.log(waitting_queue.length)
-  if (!waitting_queue.includes(client)) {
+
+  if (!waitting_queue.includes(client) && client.state == 'Idle') {
+
     waitting_queue.push(client)
+    client.state = 'Waitting'
     console.log('Add ' + client.username + ' in waitting queue.')
+
   }
   else {
     console.log('Fail in waitting queue.')
   }
 }
 
+// Cancel match
 function cancelMatch(username) {
 
   let client = connected_clients[username]
-  console.log(username + ' call Cancel Match Function.')
 
   // The client still in waitting list
   if (client.state == 'Waitting') {
@@ -189,17 +153,20 @@ function cancelMatch(username) {
         break
       }
     }
+
   }
   else if (client.state == 'Ready') {
+
     let room = room_list[client.room_id]
-    for (let i = 0; i < room.player_list.length; i++) {
-      if (room.player_list[i].username == username) {
-        room.player_list.splice(i, 1)
+    for (let i = 0; i < room.waitting_queue.length; i++) {
+      if (room.waitting_queue[i].username == username) {
+        room.waitting_queue.splice(i, 1)
         client.state = 'Idle'
         console.log(username + ' has already canceled the match in Room ' + room.id + '.')
         break
       }
     }
+
   }
   else if (client.state == 'Playing') {
     console.log('The player is playing game.')
@@ -209,21 +176,25 @@ function cancelMatch(username) {
   }
 }
 
+// When the game over.
 function endGame(username) {
-  let client = connected_clients[username]
-  console.log(username + ' call End Game Function.')
 
+  let client = connected_clients[username]
   let room = room_list[client.room_id]
-  if (room.in_game_players[client.username]) {
-    delete room.in_game_players[client.username]
+
+  if (room.players_list[client.username]) {
+    delete room.players_list[client.username]
   }
 
   client.room_id = undefined
   client.state = 'Idle'
 }
 
-// Search a idle server to create a room.
+// Server Function
+
+// Search a idle manager to create a room.
 function searchIdleServer() {
+
   let idle_server = undefined
   Object.keys(connected_servers).every((key)=> {
     if (connected_servers[key].state == 'Idle') {
@@ -235,40 +206,41 @@ function searchIdleServer() {
     }
   })
   return idle_server
+
 }
 
+// Get the unique session ID from Client and set it to the room.
 function setSessionIdForRoom(username, session_id) {
-  let server = connected_servers[username]
-  console.log(username + ' call setSessionIdForRoom Function.')
 
+  let server = connected_servers[username]
   let room = room_list[server.room_id]
+  room.state_DS = 'Awake'
   room.session_id = session_id
-  room.DS_started = true
+  
 }
 
-function setStateOfRoomAndPlayer(username) {
+// Set the state of room and players when the game get started.
+function setRoomState(username) {
+
   let server = connected_servers[username]
-  console.log(username + ' call setStateOfRoomAndPlayer Function.')
-
   let room = room_list[server.room_id]
-  room.state = 'Unavailable'
-  room.owner.state = 'Playing'
-  Object.keys(room.in_game_players).forEach((key) => {
-    room.in_game_players[key].state = 'Playing'
-  })
+  room.state = 'Busy'
+  server.state = 'Busy'
+  // Debug
+  console.log('Room owner\'s State: ' + room.owner.state)
+  
 }
 
-
+// Do something when the game over.
 function gameCompleteSetting(username) {
-  let server = connected_servers[username]
-  console.log(username + ' call gameCompleteSetting Function.')
 
+  let server = connected_servers[username]
   let room = room_list[server.room_id]
-  Object.keys(room.in_game_players).forEach((key) => {
-    if (!room.in_game_players[key]) {
-      room.in_game_players[key].state = 'Idle'
-      room.in_game_players[key].room_id = undefined
-      delete room.in_game_players[key]
+  Object.keys(room.players_list).forEach((key) => {
+    if (room.players_list[key]) {
+      room.players_list[key].state = 'Idle'
+      room.players_list[key].room_id = undefined
+      delete room.players_list[key]
     }
   })
   clearInterval(room.room_server)
@@ -276,24 +248,26 @@ function gameCompleteSetting(username) {
     delete room_list[server.room_id]
   }
   server.state = 'Idle'
+
 }
 
-// Lobby server check the waitting queue.
+// Lobby server.
 let lobby_server = setInterval(function() {
-
-  // console.log(Object.keys(connected_clients))
   
   if (waitting_queue.length > 0) {
+
     // Find a room and add a player.
     let add_room_success = false
-    Object.keys(room_list).every((key)=>{
-      if (room_list[key].state == 'Available' && room_list[key].player_list.length < room_list[key].max_players) {
+    Object.keys(room_list).every( (key) => {
+
+      if (room_list[key].state == 'Ready' && room_list[key].checkPlayerNumValid()) {
+
         // Set the client's info
         let cur_client = waitting_queue.shift()
         cur_client.room_id = room_list[key].id
         cur_client.state = 'Ready'
 
-        room_list[key].player_list.push(cur_client)
+        room_list[key].waitting_queue.push(cur_client)
         add_room_success = true
 
         console.log(cur_client.username + ' join a room.')
@@ -303,28 +277,35 @@ let lobby_server = setInterval(function() {
       }
     })
     
-
-    // Did not find an available room
+    // Did not find an idle room
     if (!add_room_success) {
-      if (Object.keys(room_list).length < max_rooms) {
-        let room_owner = searchIdleServer()
-        if (room_owner != undefined) {
-          let new_room = new Room(history_room_num, 'Available', 3, room_owner)
-          history_room_num += 1
 
-          let cur_client = waitting_queue.shift()
-          cur_client.room_id = new_room.id
-          cur_client.state = 'Ready'
+      let room_owner = searchIdleServer()
+      if (room_owner) {
 
-          new_room.player_list.push(cur_client)
-          room_list[new_room.id] = new_room
-          console.log('Server create a new room.')
-          console.log(cur_client.username + ' join a room.')
+        // Some room setting.
+        let setting = {
+          setup_cond: 1,
+          max_players: 3
         }
+
+        let new_room = new Room(history_room_num, 'Ready', room_owner, setting)
+        history_room_num += 1
+
+        let cur_client = waitting_queue.shift()
+        cur_client.room_id = new_room.id
+        cur_client.state = 'Ready'
+
+        new_room.waitting_queue.push(cur_client)
+        room_list[new_room.id] = new_room
+        console.log('Server create a new room.')
+        console.log(cur_client.username + ' join a room.')
+      }
+      else {
+        console.log('There is no idle manager.')
       }
     }
   }
-
 }, 1000)
 
 module.exports = {
