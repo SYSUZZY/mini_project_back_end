@@ -213,7 +213,7 @@ function setSessionIdForRoom(username, session_id) {
 
   let server = connected_servers[username]
   let room = room_list[server.room_id]
-  console.log('!!!!!!!!!!!!!!!!!!!!!!!1' + room.state_DS)
+  console.log('!!!!!!!!!!!!!!!!!!!!!!!1' + room.session_id)
   room.state_DS = 'Awake'
   room.session_id = session_id
   
