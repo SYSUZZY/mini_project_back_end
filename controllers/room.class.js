@@ -1,6 +1,15 @@
 
 class Room {
-
+  id
+  state
+  owner
+  players_list
+  waitting_queue
+  setup_cond
+  max_players
+  state_DS
+  session_id
+  room_server
   constructor(id, state, owner, setting) {
     
     this.id = id        // Unique ID
