@@ -71,7 +71,7 @@ const manageConnection = async ctx => {
         ctx.websocket.on('close', ()=> {
           let username = ctx.params.username
           console.log(username + ' close the websocket.')
-          delete connected_servers[username]
+          serverDead(username)
         })
   
         ctx.websocket.send('Websocket connnect successfully.')
@@ -121,8 +121,7 @@ const manageConnection = async ctx => {
           // TODO: Add a close socket function
           let username = ctx.params.username
           console.log(username + ' close the websocket.')
-          cancelMatch(username)
-          delete connected_clients[username]
+          clientDead(username)
         })
   
         ctx.websocket.send('Websocket connnect successfully.')
@@ -208,6 +207,45 @@ function endGame(username) {
   client.state = 'Idle'
 }
 
+// Client was dead
+function clientDead(username) {
+
+  console.log(username + ' is dead.')
+
+  if (connected_clients[username]) {
+    if (connected_clients[username].state == 'Waitting') {
+
+      for (let i = 0; i < waitting_queue.length; i++) {
+        if (waitting_queue[i].username == username) {
+          waitting_queue.splice(i, 1)
+          break
+        }
+      }
+  
+    }
+    else if (connected_clients[username].state == 'Ready') {
+  
+      let room = room_list[connected_clients[username].room_id]
+      for (let i = 0; i < room.waitting_queue.length; i++) {
+        if (room.waitting_queue[i].username == username) {
+          room.waitting_queue.splice(i, 1)
+          break
+        }
+      }
+  
+    }
+    else if (connected_clients[username].state == 'Playing') {
+  
+      let room = room_list[connected_clients[username].room_id]
+      if (room.players_list[username]) {
+        delete room.players_list[username]
+      }
+  
+    }
+    delete connected_clients[username]
+  }
+}
+
 // Server Function
 
 // Search a idle manager to create a room.
@@ -251,24 +289,43 @@ function setRoomState(username) {
 
 // Do something when the game over.
 function gameCompleteSetting(username) {
-
   let server = connected_servers[username]
   let room = room_list[server.room_id]
-  Object.keys(room.players_list).forEach((key) => {
+  cleanRoom(room)
+  server.state = 'Idle'
+}
+
+// Server dead
+function serverDead(username) {
+  console.log(username + ' is dead.')
+  if (connected_servers[username].state == 'Busy') {
+    let room = room_list[connected_servers[username].room_id]
+    cleanRoom(room)
+  }
+  delete connected_servers[username]
+}
+
+// Lobby Function
+
+// Clean Room
+function cleanRoom(room) {
+  // Kick out players
+  Object.keys(room.players_list).forEach( (key) => {
     if (room.players_list[key]) {
       room.players_list[key].state = 'Idle'
-      room.players_list[key].room_id = undefined
+      room.players_list[key].room_id = undefined 
       delete room.players_list[key]
     }
   })
   clearInterval(room.room_server)
-  if (room_list[server.room_id]) {
-    delete room_list[server.room_id]
+  for (let i = 0; i < room.waitting_queue.length; i++) {
+    room.waitting_queue[i].state = 'Idle'
+    room.waitting_queue[i].room_id = undefined
   }
-  server.state = 'Idle'
-}
 
-// Lobby Function
+  // Delete room
+  delete room_list[room.id]
+}
 
 // Reset health
 function resetHealth(username) {
@@ -285,76 +342,16 @@ function resetHealth(username) {
 // Check connected client's health
 let health_monitor = setInterval( () => {
   Object.keys(connected_clients).forEach( (key) => {
-
     if (connected_clients[key].health <= 0) {
-      console.log(key + ' is dead.')
-      if (connected_clients[key].state == 'Waitting') {
-
-        for (let i = 0; i < waitting_queue.length; i++) {
-          if (waitting_queue[i].username == key) {
-            waitting_queue.splice(i, 1)
-            break
-          }
-        }
-
-      }
-      else if (connected_clients[key].state == 'Ready') {
-
-        let room = room_list[connected_clients[key].room_id]
-        for (let i = 0; i < room.waitting_queue.length; i++) {
-          if (room.waitting_queue[i].username == key) {
-            room.waitting_queue.splice(i, 1)
-            break
-          }
-        }
-    
-      }
-      else if (connected_clients[key].state == 'Playing') {
-
-        let room = room_list[connected_clients[key].room_id]
-        if (room.players_list[key]) {
-          delete room.players_list[key]
-        }
-
-      }
-      delete connected_clients[key]
+      clientDied(key)
     }
   })
 
   Object.keys(connected_servers).forEach( (key) => {
-
     if (connected_servers[key].health <= 0) {
-      console.log(key + ' is dead.')
-      if (connected_servers[key].state == 'Busy') {
-
-        let room = room_list[connected_servers[key].room_id]
-
-        // Kick out players
-        Object.keys(room.players_list).forEach( (key) => {
-
-          if (room.players_list[key]) {
-            room.players_list[key].state = 'Idle'
-            room.players_list[key].room_id = undefined
-            clearInterval(room.room_server)
-            delete room.players_list[key]
-          }
-
-        })
-        for (let i = 0; i < room.waitting_queue.length; i++) {
-          room.waitting_queue[i].state = 'Idle'
-          room.waitting_queue[i].room_id = undefined
-        }
-
-        // Delete room
-        delete room_list[room.id]
-      }
-
-      delete connected_servers[key]
-
+      serverDead(key)
     }
-
   })
-  
 }, 5000)
 
 // Damage on client
