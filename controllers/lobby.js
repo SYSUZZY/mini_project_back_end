@@ -1,4 +1,4 @@
-import { Room } from './room'
+const Room = require('./room').Room
 
 const tokenUtil = require('../utils/token')
 
