@@ -339,7 +339,7 @@ function cleanRoom(room) {
 
 // Reset health
 function resetHealth(username) {
-  // console.log(username + ' is alive.')
+  console.log(username + ' is alive.')
   if (connected_servers[username]) {
     connected_servers[username].health = config.CONNECTED_HEALTH
   }
