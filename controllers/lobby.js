@@ -324,9 +324,13 @@ function setRoomState(username) {
 // Do something when the game over.
 function gameCompleteSetting(username) {
   let server = connected_servers[username]
-  let room = room_list[server.room_id]
-  cleanRoom(room)
-  server.state = 'Idle'
+  if (server) {
+    let room = room_list[server.room_id]
+    if (room) {
+      cleanRoom(room)
+    }
+    server.state = 'Idle'
+  }
 }
 
 // Server dead
@@ -435,7 +439,7 @@ let lobby_server = setInterval( () => {
         // Some room setting.
         let setting = {
           setup_cond: 1,
-          max_players: 4
+          max_players: 4,
         }
 
         let new_room = new Room(history_room_num, 'Ready', room_owner, setting)
