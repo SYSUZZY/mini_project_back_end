@@ -41,8 +41,8 @@ class Room {
           console.log('Send_Msg: ' + JSON.stringify(send_msg))
         }
       }
-      // The DS has been built and there is somebody in waitting queue and the room is ready.
       else if (this.state == 'Ready' && this.waitting_queue.length > 0) {
+        // The DS has been built and there is somebody in waitting queue and the room is ready.
         
         let cur_player = this.waitting_queue.shift()
         console.log(cur_player.username + ' call Join Session.')
@@ -55,6 +55,14 @@ class Room {
         cur_player.client.websocket.send(JSON.stringify(send_msg))
         console.log(cur_player.username + ' join session.')
       }
+
+      if (this.state == 'Ready') {
+        console.log("this.state = Ready")
+      }
+      if (this.waitting_queue.length > 0) {
+        console.log("this.waitting_queue.length = " + this.waitting_queue.length)
+      }
+      
     }, 1000)
   }
 
