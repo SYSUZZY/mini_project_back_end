@@ -148,7 +148,10 @@ const manageConnection = async ctx => {
 function applyMatch(username) {
 
   let client = connected_clients[username]
-
+  if (client == undefined) {
+    console.log(username + ' is empty')
+  } 
+  console.log('client: ' + client.username)
   if (!waitting_queue.includes(client) && client.state == 'Idle') {
 
     waitting_queue.push(client)
