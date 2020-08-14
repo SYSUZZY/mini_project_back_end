@@ -208,11 +208,11 @@ function endGame(username) {
 
   let client = connected_clients[username]
   let room = room_list[client.room_id]
-
-  if (room.players_list[client.username]) {
-    delete room.players_list[client.username]
+  if (room) {
+    if (room.players_list[client.username]) {
+      delete room.players_list[client.username]
+    }
   }
-
   client.room_id = undefined
   client.state = 'Idle'
 }
