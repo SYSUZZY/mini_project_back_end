@@ -411,7 +411,7 @@ let lobby_server = setInterval( () => {
         // Some room setting.
         let setting = {
           setup_cond: 1,
-          max_players: 3
+          max_players: 4
         }
 
         let new_room = new Room(history_room_num, 'Ready', room_owner, setting)
