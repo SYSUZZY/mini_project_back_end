@@ -9,7 +9,6 @@ var room_list = {}
 
 var history_room_num = 0
 
-
 const manageConnection = async ctx => {
 
   let token = ctx.header.authorization
@@ -149,26 +148,31 @@ function applyMatch(username) {
 
   let client = connected_clients[username]
   if (client == undefined) {
-    console.log(username + ' is empty')
-  } 
-  console.log('client: ' + client.username)
-  if (!waitting_queue.includes(client) && client.state == 'Idle') {
-
-    waitting_queue.push(client)
-    client.state = 'Waitting'
-    console.log('Add ' + client.username + ' in waitting queue.')
-
+    console.log(username + ' loss connection.')
   }
   else {
-    console.log('Fail in waitting queue.')
+    if (!waitting_queue.includes(client) && client.state == 'Idle') {
+  
+      waitting_queue.push(client)
+      client.state = 'Waitting'
+      console.log('Add ' + client.username + ' in waitting queue.')
+  
+    }
+    else {
+      console.log('Fail in waitting queue.')
+    }
   }
+  
 }
 
 // Cancel match
 function cancelMatch(username) {
 
   let client = connected_clients[username]
-
+  if (client == undefined) {
+    console.log(username + ' loss connection.')
+    return
+  }
   // The client still in waitting list
   if (client.state == 'Waitting') {
 
@@ -207,6 +211,10 @@ function cancelMatch(username) {
 function endGame(username) {
 
   let client = connected_clients[username]
+  if (client == undefined) {
+    console.log(username + ' loss connection.')
+    return
+  }
   let room = room_list[client.room_id]
   if (room) {
     if (room.players_list[client.username]) {
