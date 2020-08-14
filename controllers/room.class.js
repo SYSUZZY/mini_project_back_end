@@ -56,9 +56,9 @@ class Room {
       }
 
       // Check the number of players in this room.
-      if (!this.checkPlayerNumValid()) {
-        this.state = 'Busy'
-      }
+      // if (!this.checkPlayerNumValid()) {
+      //   this.state = 'Busy'
+      // }
       
     }, 1000)
   }
