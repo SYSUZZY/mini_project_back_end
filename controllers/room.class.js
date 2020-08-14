@@ -42,14 +42,13 @@ class Room {
         
         let cur_player = this.waitting_queue.shift()
         console.log(cur_player.username + ' call Join Session.')
-        cur_player.state = 'Playing'
+        
         this.players_list[cur_player.username] = cur_player
         var send_msg = {
           action: 'JoinSession',
           session_id: this.session_id
         }
         cur_player.client.websocket.send(JSON.stringify(send_msg))
-        console.log(cur_player.username + ' join session.')
       }
 
       if (this.waitting_queue.length > 0) {

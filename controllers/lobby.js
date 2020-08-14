@@ -123,6 +123,9 @@ const manageConnection = async ctx => {
           else if (json_msg.action == 'HeartBeat') {
             resetHealth(username)
           }
+          else if (json_msg.action == 'JoinDS') {
+            setPlayerStateJoinD(username)
+          }
         })
   
         ctx.websocket.on('close', ()=> {
@@ -266,6 +269,15 @@ function clientDead(username) {
     }
     delete connected_clients[username]
   }
+}
+
+function setPlayerStateJoinD(username) {
+
+  if (connected_clients[username]) {
+    console.log(username + ' join session success.')
+    connected_clients[username].state = 'Playing'
+  }
+
 }
 
 // Server Function
