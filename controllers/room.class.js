@@ -43,8 +43,9 @@ class Room {
       }
       // The DS has been built and there is somebody in waitting queue and the room is ready.
       else if (this.state == 'Ready' && this.waitting_queue.length > 0) {
-
+        
         let cur_player = this.waitting_queue.shift()
+        console.log(cur_player.username + ' call Join Session.')
         cur_player.state = 'Playing'
         this.players_list[cur_player.username] = cur_player
         var send_msg = {
