@@ -52,7 +52,7 @@ const manageConnection = async ctx => {
           let json_msg = JSON.parse(msg)
 
           // Debug
-          if (msg.action != 'HeartBeat') {
+          if (json_msg.action != 'HeartBeat') {
             console.log('User: ' + username + ' Message: ' + msg)
           }
           
@@ -106,7 +106,7 @@ const manageConnection = async ctx => {
           let json_msg = JSON.parse(msg)
 
           // Debug
-          if (msg.action != 'HeartBeat') {
+          if (json_msg.action != 'HeartBeat') {
             console.log('User: ' + username + ' Message: ' + msg)
           }
 
