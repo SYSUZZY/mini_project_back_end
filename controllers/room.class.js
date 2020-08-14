@@ -19,14 +19,10 @@ class Room {
 
       console.log('Room ' + this.id + ' has ' + this.waitting_queue.length + ' players.')
 
-      // Check the number of players in this room.
-      if (!this.checkPlayerNumValid()) {
-        this.state = 'Busy'
-      }
-
       // Check the state of DS server.
       // Debug
       console.log('state_DS: ' + this.state_DS)
+      console.log("state: " + this.state)
       if (this.state_DS == 'Sleep') {
 
         // Satisfy the setup condition.
@@ -56,11 +52,13 @@ class Room {
         console.log(cur_player.username + ' join session.')
       }
 
-      if (this.state == 'Ready') {
-        console.log("this.state = Ready")
-      }
       if (this.waitting_queue.length > 0) {
         console.log("this.waitting_queue.length = " + this.waitting_queue.length)
+      }
+
+      // Check the number of players in this room.
+      if (!this.checkPlayerNumValid()) {
+        this.state = 'Busy'
       }
       
     }, 1000)
