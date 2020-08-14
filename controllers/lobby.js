@@ -74,7 +74,9 @@ const manageConnection = async ctx => {
         ctx.websocket.on('close', ()=> {
           let username = ctx.params.username
           console.log(username + ' close the websocket.')
-          serverDead(username)
+          if (connected_servers[username]) {
+            serverDead(username)
+          }
         })
   
         ctx.websocket.send('Websocket connnect successfully.')
@@ -127,7 +129,9 @@ const manageConnection = async ctx => {
           // TODO: Add a close socket function
           let username = ctx.params.username
           console.log(username + ' close the websocket.')
-          clientDead(username)
+          if (connected_clients[username]) {
+            clientDead(username)
+          }
         })
   
         ctx.websocket.send('Websocket connnect successfully.')
