@@ -51,7 +51,11 @@ const manageConnection = async ctx => {
           let username = ctx.params.username
           let json_msg = JSON.parse(msg)
 
-          console.log('User: ' + username + ' Message: ' + msg)
+          // Debug
+          if (msg.action != 'HeartBeat') {
+            console.log('User: ' + username + ' Message: ' + msg)
+          }
+          
           
           if (json_msg.action == 'GameCompleted') {
             gameCompleteSetting(username)
@@ -101,7 +105,10 @@ const manageConnection = async ctx => {
           let username = ctx.params.username
           let json_msg = JSON.parse(msg)
 
-          console.log('User: ' + username + ' Message: ' + msg)
+          // Debug
+          if (msg.action != 'HeartBeat') {
+            console.log('User: ' + username + ' Message: ' + msg)
+          }
 
           if (json_msg.action == 'ApplyMatch') {
             applyMatch(username)
@@ -329,7 +336,7 @@ function cleanRoom(room) {
 
 // Reset health
 function resetHealth(username) {
-  console.log(username + ' is alive.')
+  // console.log(username + ' is alive.')
   if (connected_servers[username]) {
     connected_servers[username].health = config.CONNECTED_HEALTH
   }
