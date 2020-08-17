@@ -124,7 +124,7 @@ const manageConnection = async ctx => {
             resetHealth(username)
           }
           else if (json_msg.action == 'JoinDS') {
-            setPlayerStateJoinD(username)
+            setPlayerStateJoinDS(username)
           }
         })
   
@@ -198,14 +198,22 @@ function cancelMatch(username) {
   else if (client.state == 'Ready') {
 
     let room = room_list[client.room_id]
-    for (let i = 0; i < room.waitting_queue.length; i++) {
-      if (room.waitting_queue[i].username == username) {
-        room.waitting_queue.splice(i, 1)
-        client.state = 'Idle'
-        console.log(username + ' has already canceled the match in Room ' + room.id + '.')
-        break
+    if (room.players_list[username]) {
+      room.players_list[username].state = 'Idle'
+      delete room.players_list[username]
+      console.log(username + ' has already canceled the match in Room ' + room.id + '.')
+    }
+    else {
+      for (let i = 0; i < room.waitting_queue.length; i++) {
+        if (room.waitting_queue[i].username == username) {
+          room.waitting_queue.splice(i, 1)
+          client.state = 'Idle'
+          console.log(username + ' has already canceled the match in Room ' + room.id + '.')
+          break
+        }
       }
     }
+
   }
   else if (client.state == 'Playing') {
     console.log('The player is playing game.')
@@ -275,7 +283,7 @@ function clientDead(username) {
   }
 }
 
-function setPlayerStateJoinD(username) {
+function setPlayerStateJoinDS(username) {
 
   if (connected_clients[username]) {
     console.log(username + ' join session success.')
