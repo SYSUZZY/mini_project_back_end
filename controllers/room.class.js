@@ -54,11 +54,6 @@ class Room {
       if (this.waitting_queue.length > 0) {
         console.log("this.waitting_queue.length = " + this.waitting_queue.length)
       }
-
-      // Check the number of players in this room.
-      // if (!this.checkPlayerNumValid()) {
-      //   this.state = 'Busy'
-      // }
       
     }, 1000)
   }
