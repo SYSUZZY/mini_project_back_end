@@ -61,7 +61,7 @@ const manageConnection = async ctx => {
           }
           else if (json_msg.action == 'SendSessionId') {
             console.log('Session ID: ' + json_msg.session_id)
-            setSessionIdForRoom(username, json_msg.session_id)
+            setSessionIdForRoom(username, json_msg)
           }
           else if (json_msg.action == 'GameStarted') {
             setRoomState(username)
@@ -312,12 +312,13 @@ function searchIdleServer() {
 }
 
 // Get the unique session ID from Client and set it to the room.
-function setSessionIdForRoom(username, session_id) {
+function setSessionIdForRoom(username, json_msg) {
 
   let server = connected_servers[username]
   let room = room_list[server.room_id]
   room.state_DS = 'Awake'
-  room.session_id = session_id
+  room.session_id = json_msg.session_id
+  room.session_name = json_msg.session_name
   
 }
 

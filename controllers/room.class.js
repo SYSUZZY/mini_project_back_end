@@ -14,6 +14,7 @@ class Room {
 
     this.state_DS = 'Sleep'      // The state of DS server: Sleep & Awake
     this.session_id = undefined  // Unique session ID of DS server
+    this.session_name = owner.username  // Unique session name of DS server
     
     this.room_server = setInterval( () => {
 
@@ -30,7 +31,7 @@ class Room {
           // Send setup DS command.
           let send_msg = {
             action: 'CreateSession',
-            session_name: this.owner.username
+            session_name: this.session_name
           }
           this.owner.server.websocket.send(JSON.stringify(send_msg))
           // Debug
@@ -46,7 +47,8 @@ class Room {
         this.players_list[cur_player.username] = cur_player
         var send_msg = {
           action: 'JoinSession',
-          session_id: this.session_id
+          session_id: this.session_id,
+          session_name: this.session_name
         }
         cur_player.client.websocket.send(JSON.stringify(send_msg))
       }
