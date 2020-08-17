@@ -17,12 +17,12 @@ class Room {
     
     this.room_server = setInterval( () => {
 
-      console.log('Room ' + this.id + ' has ' + this.waitting_queue.length + ' players.')
+      // console.log('Room ' + this.id + ' has ' + this.waitting_queue.length + ' players.')
 
       // Check the state of DS server.
       // Debug
-      console.log('state_DS: ' + this.state_DS)
-      console.log("state: " + this.state)
+      // console.log('state_DS: ' + this.state_DS)
+      // console.log("state: " + this.state)
       if (this.state_DS == 'Sleep') {
 
         // Satisfy the setup condition.

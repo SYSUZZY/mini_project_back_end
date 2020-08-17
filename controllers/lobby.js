@@ -178,7 +178,7 @@ function cancelMatch(username) {
   let client = connected_clients[username]
   if (client == undefined) {
     console.log(username + ' loss connection.')
-    return
+    // return
   }
   // The client still in waitting list
   if (client.state == 'Waitting') {
@@ -204,7 +204,6 @@ function cancelMatch(username) {
         break
       }
     }
-
   }
   else if (client.state == 'Playing') {
     console.log('The player is playing game.')
