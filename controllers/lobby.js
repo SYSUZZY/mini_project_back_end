@@ -212,6 +212,9 @@ function cancelMatch(username) {
   else if (client.state == 'Idle') {
     console.log('The player is not matching.')
   }
+  else {
+    console.log(client.state)
+  }
 }
 
 // When the game over.
