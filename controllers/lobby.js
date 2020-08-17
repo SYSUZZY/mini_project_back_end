@@ -166,6 +166,8 @@ function applyMatch(username) {
   
     }
     else {
+      console.log('!waitting_queue.includes(client): ' + !waitting_queue.includes(client))
+      console.log('client.state: ' + client.state)
       console.log('Fail in waitting queue.')
     }
   }
