@@ -174,7 +174,7 @@ function applyMatch(username) {
 
 // Cancel match
 function cancelMatch(username) {
-
+  console.log('CancelMatch was called.')
   let client = connected_clients[username]
   if (client == undefined) {
     console.log(username + ' loss connection.')
@@ -367,7 +367,7 @@ function cleanRoom(room) {
 
 // Reset health
 function resetHealth(username) {
-  console.log(username + ' is alive.')
+  // console.log(username + ' is alive.')
   if (connected_servers[username]) {
     connected_servers[username].health = config.CONNECTED_HEALTH
   }
