@@ -516,6 +516,13 @@ function heartBeatACK(username) {
     connected_clients[username].client.websocket.send(JSON.stringify(json_msg))
   }
 
+  if (connected_servers[username]) {
+    let json_msg = {
+      action: 'HeartBeat'
+    }
+    connected_servers[username].server.websocket.send(JSON.stringify(json_msg))
+  }
+
 }
 
 // Check connected client's health
