@@ -8,11 +8,12 @@ class Room {
 
     this.players_list = {}   // Players in Game
     this.waitting_queue = [] // Players in waitting list
+    this.dead_players_list = []  // Players die in Game
     
     this.setup_cond = setting.setup_cond    // The condition of setting up DS server
     this.max_players = setting.max_players  // Maximum number of players
 
-    this.state_DS = 'Sleep'      // The state of DS server: Sleep & Awake
+    this.state_DS = 'Sleep'      // The state of DS server: Sleep & Awake & Battle & Settlement
     this.session_id = undefined  // Unique session ID of DS server
     this.session_name = owner.username  // Unique session name of DS server
     
@@ -68,6 +69,18 @@ class Room {
       return false
     }
     return true
+  }
+
+  // Check dead player list
+  checkDeadPlayer = function(username) {
+    let is_found = false
+    for (let i = 0; i < this.dead_players_list.length; i++) {
+      if (this.dead_players_list[i] == username) {
+        is_found = true
+        break
+      }
+    }
+    return is_found
   }
 
 }

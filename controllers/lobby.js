@@ -4,6 +4,7 @@ const tokenUtil = require('../utils/token')
 
 var connected_clients = {}
 var connected_servers = {}
+var loss_connection_clients = {}
 var waitting_queue = []
 var room_list = {}
 
@@ -55,7 +56,6 @@ const manageConnection = async ctx => {
             console.log('User: ' + username + ' Message: ' + msg)
           }
           
-          
           if (json_msg.action == 'GameCompleted') {
             gameCompleteSetting(username)
           }
@@ -68,6 +68,13 @@ const manageConnection = async ctx => {
           }
           else if (json_msg.action == 'HeartBeat') {
             resetHealth(username)
+            heartBeatACK(username)
+          }
+          else if (json_msg.action == 'EnterSettlement') {
+            setDSStateSettlement(username)
+          }
+          else if (json_msg.action == 'SendDeadPlayer') {
+            recordDeadPlayer(username, json_msg.dead_player)
           }
         })
   
@@ -86,7 +93,7 @@ const manageConnection = async ctx => {
 
         console.log(username + ' connect to server.')
 
-        if (!connected_clients.hasOwnProperty(username)) {
+        if (!connected_clients.hasOwnProperty(username) && !loss_connection_clients.hasOwnProperty(username)) {
           // The state of client: Idle & Waitting & Ready & Playing
           connected_clients[username] = { 
             username: username, 
@@ -96,8 +103,17 @@ const manageConnection = async ctx => {
             health: config.CONNECTED_HEALTH 
           }
         }
-        else {
+        else if (connected_clients.hasOwnProperty(username)) {
           console.log(username + ' has been already in Lobby.')
+          connected_clients[username].client = ctx
+          recoverBattle(username)
+        }
+        else if (loss_connection_clients.hasOwnProperty(username)) {
+          console.log(username + ' has been already in Loss connection list.')
+          connected_clients[username] = loss_connection_clients[username]
+          connected_clients[username].client = ctx
+          delete loss_connection_clients[username]
+          recoverBattle(username)
         }
   
         // Register Event Listener
@@ -122,18 +138,32 @@ const manageConnection = async ctx => {
           }
           else if (json_msg.action == 'HeartBeat') {
             resetHealth(username)
+            heartBeatACK(username)
           }
           else if (json_msg.action == 'JoinDS') {
             setPlayerStateJoinDS(username)
           }
+          else if (json_msg.action == 'CloseSocket') {
+            console.log(username + ' wants to close socket.')
+            feedbackCloseSocket(username)
+          }
         })
   
         ctx.websocket.on('close', ()=> {
-          // TODO: Add a close socket function
           let username = ctx.params.username
           console.log(username + ' close the websocket.')
+
           if (connected_clients[username]) {
-            clientDead(username)
+            // Close socket normally.
+            if (connected_clients[username].state == 'Closing') {
+              resetClientState(username)
+            }
+            // Close socket abnormally.
+            else {
+              resetClientStateWithoutPlaying(username)
+              loss_connection_clients[username] = connected_clients[username]
+              delete connected_clients[username]
+            }
           }
         })
   
@@ -244,12 +274,29 @@ function endGame(username) {
   client.state = 'Idle'
 }
 
-// Client was dead
-function clientDead(username) {
+function resetClientState(username) {
 
-  console.log(username + ' is dead.')
-
+  resetClientStateWithoutPlaying(username)
+  
   if (connected_clients[username]) {
+
+    if (connected_clients[username].state == 'Playing') {
+  
+      let room = room_list[connected_clients[username].room_id]
+      if (room.players_list[username]) {
+        delete room.players_list[username]
+      }
+
+      connected_clients[username].state = 'Idle'
+  
+    }
+    
+  }
+}
+
+function resetClientStateWithoutPlaying(username) {
+  if (connected_clients[username]) {
+
     if (connected_clients[username].state == 'Waitting') {
 
       for (let i = 0; i < waitting_queue.length; i++) {
@@ -271,15 +318,12 @@ function clientDead(username) {
       }
   
     }
-    else if (connected_clients[username].state == 'Playing') {
+    
+    if (connected_clients[username].state != 'Playing') {
   
-      let room = room_list[connected_clients[username].room_id]
-      if (room.players_list[username]) {
-        delete room.players_list[username]
-      }
+      connected_clients[username].state = 'Idle'
   
     }
-    delete connected_clients[username]
   }
 }
 
@@ -292,7 +336,56 @@ function setPlayerStateJoinDS(username) {
 
 }
 
+// Reset the state of client and change it to 'Closing'.
+// Send the close socket command to client.
+function feedbackCloseSocket(username) {
+
+  if (connected_clients[username]) {
+    console.log('Find client ' + username)
+    resetClientState(username)
+
+    connected_clients[username].state = 'Closing'
+    let send_msg = {
+      action: 'CloseSocket',
+    }
+    connected_clients[username].client.websocket.send(JSON.stringify(send_msg))
+  }
+  else {
+    console.log('Can not find the client ' + username)
+  }
+
+}
+
+
 // Server Function
+
+// Recover Battle
+function recoverBattle(username) {
+  let connected_client = connected_clients[username]
+  if (connected_client) {
+    if (connected_client.state == 'Playing') {
+      let room = room_list[connected_client.room_id]
+      if (room) {
+        if (room.checkDeadPlayer(username)) {
+          // Clear dead player's state.
+          endGame(username)
+        }
+        else {
+          // TODO: Ask player to join battle.
+          if (room.state_DS == 'Battle') {
+            room.players_list[username] = connected_client
+            var send_msg = {
+              action: 'JoinSession',
+              session_id: room.session_id,
+              session_name: room.session_name
+            }
+            connected_client.client.websocket.send(JSON.stringify(send_msg))
+          }
+        }
+      }
+    }
+  }
+}
 
 // Search a idle manager to create a room.
 function searchIdleServer() {
@@ -329,6 +422,7 @@ function setRoomState(username) {
   let room = room_list[server.room_id]
   room.state = 'Busy'
   server.state = 'Busy'
+  room.state_DS = 'Battle'
   // Debug
   console.log('Room owner\'s State: ' + room.owner.state)
   
@@ -343,6 +437,28 @@ function gameCompleteSetting(username) {
       cleanRoom(room)
     }
     server.state = 'Idle'
+  }
+}
+
+// Change DS State
+function setDSStateSettlement(username) {
+  let server = connected_servers[username]
+  if (server) {
+    let room = room_list[server.room_id]
+    if (room) {
+      room.state_DS = 'Settlement'
+    }
+  }
+}
+
+// Record the dead player in room
+function recordDeadPlayer(username, dead_player_name) {
+  let server = connected_servers[username]
+  if (server) {
+    let room = room_list[server.room_id]
+    if (room) {
+      room.dead_players_list.push(dead_player_name)
+    }
   }
 }
 
@@ -387,6 +503,17 @@ function resetHealth(username) {
   if (connected_clients[username]) {
     connected_clients[username].health = config.CONNECTED_HEALTH
   }
+}
+
+// Tell the client that server is running
+function heartBeatACK(username) {
+
+  if (connected_clients[username]) {
+    let json_msg = {
+      action: 'HeartBeat'
+    }
+    connected_clients[username].client.websocket.send(JSON.stringify(json_msg))
+  }
 
 }
 
@@ -394,7 +521,9 @@ function resetHealth(username) {
 let health_monitor = setInterval( () => {
   Object.keys(connected_clients).forEach( (key) => {
     if (connected_clients[key].health <= 0) {
-      clientDead(key)
+      resetClientStateWithoutPlaying(key)
+      loss_connection_clients[key] = connected_clients[key]
+      delete connected_clients[key]
     }
   })
 
