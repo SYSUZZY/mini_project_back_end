@@ -155,11 +155,14 @@ const manageConnection = async ctx => {
 
           if (connected_clients[username]) {
             // Close socket normally.
+            console.log('Here')
             if (connected_clients[username].state == 'Closing') {
+              console.log('Normal')
               resetClientState(username)
             }
             // Close socket abnormally.
             else {
+              console.log('Abnormal')
               resetClientStateWithoutPlaying(username)
               loss_connection_clients[username] = connected_clients[username]
               delete connected_clients[username]
