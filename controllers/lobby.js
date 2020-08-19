@@ -76,6 +76,9 @@ const manageConnection = async ctx => {
           else if (json_msg.action == 'SendDeadPlayer') {
             recordDeadPlayer(username, json_msg.dead_player)
           }
+          else if (json_msg.action == 'DeleteCharacterComplete') {
+            kickOutThePlayer(username, json_msg.username)
+          }
         })
   
         ctx.websocket.on('close', ()=> {
@@ -106,14 +109,14 @@ const manageConnection = async ctx => {
         else if (connected_clients.hasOwnProperty(username)) {
           console.log(username + ' has been already in Lobby.')
           connected_clients[username].client = ctx
-          recoverBattle(username)
+          checkDSState(username)
         }
         else if (loss_connection_clients.hasOwnProperty(username)) {
           console.log(username + ' has been already in Loss connection list.')
           connected_clients[username] = loss_connection_clients[username]
           connected_clients[username].client = ctx
           delete loss_connection_clients[username]
-          recoverBattle(username)
+          checkDSState(username)
         }
   
         // Register Event Listener
@@ -146,6 +149,12 @@ const manageConnection = async ctx => {
           else if (json_msg.action == 'CloseSocket') {
             console.log(username + ' wants to close socket.')
             feedbackCloseSocket(username)
+          }
+          else if (json_msg.action == 'ReturnBattle') {
+            returnBattle(username)
+          }
+          else if (json_msg.action == 'CancelReturnBattle') {
+            cancelReturnBattle(username)
           }
         })
   
@@ -357,11 +366,8 @@ function feedbackCloseSocket(username) {
 
 }
 
-
-// Server Function
-
 // Recover Battle
-function recoverBattle(username) {
+function checkDSState(username) {
   let connected_client = connected_clients[username]
   if (connected_client) {
     if (connected_client.state == 'Playing') {
@@ -374,11 +380,8 @@ function recoverBattle(username) {
         else {
           // TODO: Ask player to join battle.
           if (room.state_DS == 'Battle') {
-            room.players_list[username] = connected_client
             var send_msg = {
-              action: 'JoinSession',
-              session_id: room.session_id,
-              session_name: room.session_name
+              action: 'CallReturnBattle',
             }
             connected_client.client.websocket.send(JSON.stringify(send_msg))
           }
@@ -387,6 +390,49 @@ function recoverBattle(username) {
     }
   }
 }
+
+// Call the client back to battle
+function returnBattle(username) {
+  let connected_client = connected_clients[username]
+  if (connected_client) {
+    if (connected_client.state == 'Playing') {
+      let room = room_list[connected_client.room_id]
+      room.players_list[username] = connected_client
+      var send_msg = {
+        action: 'JoinSession',
+        session_id: room.session_id,
+        session_name: room.session_name
+      }
+      connected_client.client.websocket.send(JSON.stringify(send_msg))
+    }
+    else {
+      console.log('Battle is over')
+    }
+  }
+}
+
+// Cancel the opertunity to battle
+function cancelReturnBattle(username) {
+  let connected_client = connected_clients[username]
+  if (connected_client) {
+    if (connected_client.state == 'Playing') {
+      let send_msg = {
+        action: 'DeleteCharacter',
+        username: username
+      }
+      let room = room_list(connected_client.room_id)
+      if (room) {
+        if (!room.checkDeadPlayer(username)) {
+          if (room.state_DS == 'Battle') {
+            room.owner.server.websocket.send(JSON.stringify(send_msg))
+          }
+        }
+      }
+    }
+  }
+}
+
+// Server Function
 
 // Search a idle manager to create a room.
 function searchIdleServer() {
@@ -471,6 +517,25 @@ function serverDead(username) {
     cleanRoom(room)
   }
   delete connected_servers[username]
+}
+
+function kickOutThePlayer(username, client_username) {
+  if (connected_servers[username]) {
+    if (connected_clients[client_username]) {
+      if (connected_clients[client_username].state == 'Playing') {
+        let room = room_list[connected_clients[client_username].room_id]
+        if (room) {
+          if (room.state_DS == 'Battle') {
+            endGame(client_username)
+            let send_msg = {
+              action: 'DeleteCharacterComplete'
+            }
+            connected_clients[client_username].client.send(JSON.stringify(send_msg))
+          }
+        }
+      }
+    }
+  }
 }
 
 // Lobby Function
