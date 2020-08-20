@@ -128,10 +128,15 @@ const manageConnection = async ctx => {
         else if (loss_connection_clients.hasOwnProperty(username)) {
           console.log(username + ' has been already in Loss connection list.')
           connected_clients[username] = loss_connection_clients[username]
+          console.log(1)
           connected_clients[username].client = ctx
+          console.log(2)
           connected_clients.health = config.CONNECTED_HEALTH
+          console.log(3)
           delete loss_connection_clients[username]
+          console.log(4)
           delete connected_clients[username][loss_health]
+          console.log(5)
           checkDSState(username)
         }
   
@@ -418,6 +423,7 @@ function feedbackCloseSocket(username) {
 // Recover Battle
 function checkDSState(username) {
  
+  console.log('checkDSState1')
   let connected_client = connected_clients[username]
   console.log('checkDSState')
   if (connected_client) {
