@@ -47,9 +47,7 @@ class Room {
         
         this.players_list[cur_player.username] = cur_player
         if (cur_player.apply_match_timer) {
-          console.log(cur_player.apply_match_timer == undefined)
           clearTimeout(cur_player.apply_match_timer)
-          console.log(cur_player.apply_match_timer == undefined)
           delete cur_player.apply_match_timer
         }
         var send_msg = {

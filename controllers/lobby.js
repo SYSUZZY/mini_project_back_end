@@ -235,7 +235,7 @@ function applyMatch(username) {
           message: message
         }
         client.client.websocket.send(JSON.stringify(send_msg))
-      }, 300)
+      }, 30000)
       console.log('Add ' + client.username + ' in waitting queue.')
     }
     else {
@@ -300,7 +300,7 @@ function cancelMatch(username) {
 
   if (client.apply_match_timer) {
     clearTimeout(client.apply_match_timer)
-    delete client[apply_match_timer]
+    delete client.apply_match_timer
   }
 }
 
