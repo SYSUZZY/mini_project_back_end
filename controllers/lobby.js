@@ -496,6 +496,7 @@ function leaveTheBattle(username) {
         }
       }
     }
+    endGame(username)
   }
 }
 
