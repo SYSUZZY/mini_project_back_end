@@ -81,10 +81,13 @@ const manageConnection = async ctx => {
           }
           else if (json_msg.action == 'SendDeadPlayer') {
             recordDeadPlayer(username, json_msg.dead_player)
-            deleteCharacterInGame(username, json_msg.dead_player)
+            characterDieInGame(username, json_msg.dead_player)
           }
-          else if (json_msg.action == 'DeleteCharacterComplete') {
+          else if (json_msg.action == 'CancelReturnBattleComplete') {
             kickOutThePlayer(username, json_msg.username)
+          }
+          else if (json_msg.action == 'BlockAllPlayers') {
+            blockAllPlayers(username)
           }
         })
   
@@ -165,6 +168,9 @@ const manageConnection = async ctx => {
             else if (json_msg.action == 'CancelReturnBattle') {
               cancelReturnBattle(username)
             }
+            else if (json_msg.action == 'LeaveTheBattle') {
+              leaveTheBattle(username)
+            }
           }
           else {
             if (json_msg.action == 'KeepAlive') {
@@ -235,7 +241,7 @@ function applyMatch(username) {
           message: message
         }
         client.client.websocket.send(JSON.stringify(send_msg))
-      }, 30000)
+      }, 300000)
       console.log('Add ' + client.username + ' in waitting queue.')
     }
     else {
@@ -455,7 +461,27 @@ function cancelReturnBattle(username) {
   if (connected_client) {
     if (connected_client.state == 'Playing') {
       let send_msg = {
-        action: 'DeleteCharacter',
+        action: 'CancelReturnBattle',
+        username: username
+      }
+      let room = room_list(connected_client.room_id)
+      if (room) {
+        if (!room.checkDeadPlayer(username)) {
+          if (room.state_DS == 'Battle') {
+            room.owner.server.websocket.send(JSON.stringify(send_msg))
+          }
+        }
+      }
+    }
+  }
+}
+
+function leaveTheBattle(username) {
+  let connected_client = connected_clients[username]
+  if (connected_client) {
+    if (connected_client.state == 'Playing') {
+      let send_msg = {
+        action: 'CharacterDieInGame',
         username: username
       }
       let room = room_list(connected_client.room_id)
@@ -556,9 +582,9 @@ function recordDeadPlayer(username, dead_player_name) {
 }
 
 // Delete the character when the player die.
-function deleteCharacterInGame(username, dead_player_name) {
+function characterDieInGame(username, dead_player_name) {
   let send_msg = {
-    action: 'DeleteCharacterFromServer',
+    action: 'CharacterDieInGame',
     username: dead_player_name
   }
   connected_servers[username].server.websocket.send(JSON.stringify(send_msg))
@@ -583,7 +609,7 @@ function kickOutThePlayer(username, client_username) {
           if (room.state_DS == 'Battle') {
             endGame(client_username)
             let send_msg = {
-              action: 'DeleteCharacterComplete'
+              action: 'CancelReturnBattleComplete'
             }
             connected_clients[client_username].client.send(JSON.stringify(send_msg))
           }
@@ -591,6 +617,10 @@ function kickOutThePlayer(username, client_username) {
       }
     }
   }
+}
+
+function blockAllPlayers(username) {
+
 }
 
 // Lobby Function
