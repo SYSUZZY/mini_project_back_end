@@ -297,7 +297,7 @@ function cancelMatch(username) {
   else {
     console.log(client.state)
   }
-  
+
   if (client.apply_match_timer) {
     clearTimeout(client.apply_match_timer)
     delete client[apply_match_timer]
@@ -682,7 +682,7 @@ function applyDamage() {
   Object.keys(connected_servers).forEach( (key) => {
     connected_servers[key].health -= 1
   })
-  Object,keys(loss_connection_clients).forEach( (key) => {
+  Object.keys(loss_connection_clients).forEach( (key) => {
     loss_connection_clients[key].loss_health -= 1
   })
 }
