@@ -234,6 +234,7 @@ const manageConnection = async ctx => {
     status_code: status_code
   }
   ctx.send(JSON.stringify(send_msg))
+  console.log(JSON.stringify(send_msg))
 }
 
 // Client Functions
