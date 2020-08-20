@@ -18,6 +18,11 @@ class Room {
     this.state_DS = 'Sleep'      // The state of DS server: Sleep & Awake & Battle & Settlement
     this.session_id = undefined  // Unique session ID of DS server
     this.session_name = owner.username  // Unique session name of DS server
+    this.config_DS = {
+      current_wait_to_count_down_duration: config.CURRENT_WAIT_TO_COUNT_DOWN_DURATION,
+      begin_count_down_player_amount: config.BEGIN_COUNT_DOWN_PLAYER_AMOUNT,
+      count_down_time: config.COUNT_DOWN_TIME
+    }
     
     this.room_server = setInterval( () => {
 
@@ -35,9 +40,6 @@ class Room {
           let send_msg = {
             action: 'CreateSession',
             session_name: this.session_name,
-            current_wait_to_count_down_duration: config.CURRENT_WAIT_TO_COUNT_DOWN_DURATION,
-            begin_count_down_player_amount: config.BEGIN_COUNT_DOWN_PLAYER_AMOUNT,
-            count_down_time: config.COUNT_DOWN_TIME
           }
           this.owner.server.websocket.send(JSON.stringify(send_msg))
           // Debug

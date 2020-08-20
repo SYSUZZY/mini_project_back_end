@@ -89,6 +89,9 @@ const manageConnection = async ctx => {
           else if (json_msg.action == 'BlockAllPlayers') {
             setRoomState(username)
           }
+          else if (json_msg.action == 'GetDSConfig') {
+            getDSConfig(username)
+          }
         })
   
         ctx.websocket.on('close', ()=> {
@@ -621,6 +624,18 @@ function kickOutThePlayer(username, client_username) {
         }
       }
     }
+  }
+}
+
+function getDSConfig(username) {
+  let cur_server = connected_servers[username]
+  let cur_room = room_list[cur_server.room_id]
+  if (cur_room) {
+    let send_msg = {
+      action: 'GetConfig_DS',
+      config_DS: JSON.stringify(cur_room.config_DS)
+    }
+    cur_server.server.websocket.send(JSON.stringify(send_msg))
   }
 }
 
