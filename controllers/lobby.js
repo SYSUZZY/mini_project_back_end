@@ -135,7 +135,7 @@ const manageConnection = async ctx => {
           console.log(3)
           delete loss_connection_clients[username]
           console.log(4)
-          delete connected_clients[username][loss_health]
+          // delete connected_clients[username][loss_health]
           console.log(5)
           checkDSState(username)
         }
