@@ -50,7 +50,7 @@ class Room {
           console.log(cur_player.apply_match_timer == undefined)
           clearTimeout(cur_player.apply_match_timer)
           console.log(cur_player.apply_match_timer == undefined)
-          delete cur_player[apply_match_timer]
+          delete cur_player.apply_match_timer
         }
         var send_msg = {
           action: 'JoinSession',

@@ -235,7 +235,7 @@ function applyMatch(username) {
           message: message
         }
         client.client.websocket.send(JSON.stringify(send_msg))
-      }, 300)
+      }, 300000)
       console.log('Add ' + client.username + ' in waitting queue.')
     }
     else {
