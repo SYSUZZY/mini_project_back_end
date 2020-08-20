@@ -482,6 +482,7 @@ function cancelReturnBattle(username) {
 function leaveTheBattle(username) {
   let connected_client = connected_clients[username]
   if (connected_client) {
+    console.log('connected_client.state: '+ connected_client.state)
     if (connected_client.state == 'Playing') {
       let send_msg = {
         action: 'CharacterDieInGame',
@@ -489,7 +490,9 @@ function leaveTheBattle(username) {
       }
       let room = room_list[connected_client.room_id]
       if (room) {
+        console.log("!room.checkDeadPlayer(username): " + !room.checkDeadPlayer(username))
         if (!room.checkDeadPlayer(username)) {
+          console.log("room.state_DS: " + room.state_DS)
           if (room.state_DS == 'Battle') {
             room.owner.server.websocket.send(JSON.stringify(send_msg))
           }
