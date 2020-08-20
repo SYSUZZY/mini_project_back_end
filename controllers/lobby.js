@@ -417,18 +417,25 @@ function feedbackCloseSocket(username) {
 
 // Recover Battle
 function checkDSState(username) {
+ 
   let connected_client = connected_clients[username]
+  console.log('checkDSState')
   if (connected_client) {
+    console.log('checkDSState has client')
     if (connected_client.state == 'Playing') {
+      console.log('client is playing')
       let room = room_list[connected_client.room_id]
       if (room) {
+        console.log('room is valid')
         if (room.checkDeadPlayer(username)) {
           // Clear dead player's state.
           endGame(username)
         }
         else {
           // TODO: Ask player to join battle.
+          console.log('never dead')
           if (room.state_DS == 'Battle') {
+            console.log('DS in battle')
             var send_msg = {
               action: 'CallReturnBattle',
             }
