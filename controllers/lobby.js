@@ -10,10 +10,12 @@ var room_list = {}
 
 var history_room_num = 0
 
+// Error code: 0是没有token，1是token失效，2是token名字与玩家不对应，3是成功
 const manageConnection = async ctx => {
 
   let token = ctx.header.authorization
   let username = ctx.params.username
+  let status_code = 0
 
   if (token) {
 
@@ -21,10 +23,12 @@ const manageConnection = async ctx => {
 
     if (!payload) {
       console.log('No Authorization')
+      status_code = 1
     }
 
-    if (payload.username == username && payload.username != undefined) {
 
+    if (payload.username == username && payload.username != undefined) {
+      status_code = 3
       // Server connected.
       if (username.length < 8) {
 
@@ -217,11 +221,19 @@ const manageConnection = async ctx => {
       }
     } else {
       console.log('No Authorization')
+      status_code = 2
     }
   }
   else {
     console.log('Have not token')
+    status_code = 0
   }
+
+  let send_msg = {
+    action: 'ConnectedComplete',
+    status_code: status_code
+  }
+  ctx.send(JSON.stringify(send_msg))
 }
 
 // Client Functions
