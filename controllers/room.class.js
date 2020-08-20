@@ -46,6 +46,10 @@ class Room {
         console.log(cur_player.username + ' call Join Session.')
         
         this.players_list[cur_player.username] = cur_player
+        if (cur_player.apply_match_timer) {
+          clearTimeout(cur_player.apply_match_timer)
+          delete cur_player[apply_match_timer]
+        }
         var send_msg = {
           action: 'JoinSession',
           session_id: this.session_id,

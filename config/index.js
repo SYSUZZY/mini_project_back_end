@@ -9,7 +9,8 @@ const REDIS_URL = 'redis://zzy_redis:6379'
 const TOKEN_EXPIRE = '3d'
 const TOKEN_KEY = '0714'
 
-const CONNECTED_HEALTH = 20
+const CONNECTED_HEALTH = 25
+const DISCONNECTED_HEALTH = 300
 
 module.exports = {
   PORT,
@@ -19,5 +20,6 @@ module.exports = {
   REDIS_URL,
   TOKEN_EXPIRE,
   TOKEN_KEY,
-  CONNECTED_HEALTH
+  CONNECTED_HEALTH,
+  DISCONNECTED_HEALTH
 }

@@ -51,6 +51,12 @@ const manageConnection = async ctx => {
           let username = ctx.params.username
           let json_msg = JSON.parse(msg)
 
+          // Some universal inspection
+          if (!connected_servers[username]) {
+            console.log('The server ' + username + ' loss connection.')
+            return
+          }
+
           // Debug
           if (json_msg.action != 'HeartBeat') {
             console.log('User: ' + username + ' Message: ' + msg)
@@ -75,6 +81,7 @@ const manageConnection = async ctx => {
           }
           else if (json_msg.action == 'SendDeadPlayer') {
             recordDeadPlayer(username, json_msg.dead_player)
+            deleteCharacterInGame(username, json_msg.dead_player)
           }
           else if (json_msg.action == 'DeleteCharacterComplete') {
             kickOutThePlayer(username, json_msg.username)
@@ -116,6 +123,7 @@ const manageConnection = async ctx => {
           connected_clients[username] = loss_connection_clients[username]
           connected_clients[username].client = ctx
           delete loss_connection_clients[username]
+          delete connected_clients[username][loss_health]
           checkDSState(username)
         }
   
@@ -125,36 +133,47 @@ const manageConnection = async ctx => {
           let username = ctx.params.username
           let json_msg = JSON.parse(msg)
 
-          // Debug
-          if (json_msg.action != 'HeartBeat') {
-            console.log('User: ' + username + ' Message: ' + msg)
-          }
+          if (connected_clients[username]) {
+            // Debug
+            if (json_msg.action != 'HeartBeat') {
+              console.log('User: ' + username + ' Message: ' + msg)
+            }
 
-          if (json_msg.action == 'ApplyMatch') {
-            applyMatch(username)
+            if (json_msg.action == 'ApplyMatch') {
+              applyMatch(username)
+            }
+            else if (json_msg.action == 'CancelMatch') {
+              cancelMatch(username)
+            }
+            else if (json_msg.action == 'EndGame') {
+              endGame(username)
+            }
+            else if (json_msg.action == 'HeartBeat') {
+              resetHealth(username)
+              heartBeatACK(username)
+            }
+            else if (json_msg.action == 'JoinDS') {
+              setPlayerStateJoinDS(username)
+            }
+            else if (json_msg.action == 'CloseSocket') {
+              console.log(username + ' wants to close socket.')
+              feedbackCloseSocket(username)
+            }
+            else if (json_msg.action == 'ReturnBattle') {
+              returnBattle(username)
+            }
+            else if (json_msg.action == 'CancelReturnBattle') {
+              cancelReturnBattle(username)
+            }
           }
-          else if (json_msg.action == 'CancelMatch') {
-            cancelMatch(username)
-          }
-          else if (json_msg.action == 'EndGame') {
-            endGame(username)
-          }
-          else if (json_msg.action == 'HeartBeat') {
-            resetHealth(username)
-            heartBeatACK(username)
-          }
-          else if (json_msg.action == 'JoinDS') {
-            setPlayerStateJoinDS(username)
-          }
-          else if (json_msg.action == 'CloseSocket') {
-            console.log(username + ' wants to close socket.')
-            feedbackCloseSocket(username)
-          }
-          else if (json_msg.action == 'ReturnBattle') {
-            returnBattle(username)
-          }
-          else if (json_msg.action == 'CancelReturnBattle') {
-            cancelReturnBattle(username)
+          else {
+            if (json_msg.action == 'KeepAlive') {
+              clientIsAlive(username)
+            }
+            else {
+              console.log('The client ' + username + ' loss connection.')
+              return
+            }
           }
         })
   
@@ -172,6 +191,7 @@ const manageConnection = async ctx => {
             else {
               resetClientStateWithoutPlaying(username)
               loss_connection_clients[username] = connected_clients[username]
+              loss_connection_clients[username].loss_health = config.DISCONNECTED_HEALTH
               delete connected_clients[username]
             }
           }
@@ -202,8 +222,21 @@ function applyMatch(username) {
   
       waitting_queue.push(client)
       client.state = 'Waitting'
+      client.apply_match_timer = setTimeout(() => {
+        let message = ""
+        if (searchIdleServer) {
+          message = "Wait for another player."
+        }
+        else {
+          message = "Wait for idle server."
+        }
+        let send_msg = {
+          action: 'ApplyTooLong',
+          message: message
+        }
+        client.client.websocket.send(JSON.stringify(send_msg))
+      }, 300)
       console.log('Add ' + client.username + ' in waitting queue.')
-  
     }
     else {
       console.log('!waitting_queue.includes(client): ' + !waitting_queue.includes(client))
@@ -263,6 +296,11 @@ function cancelMatch(username) {
   }
   else {
     console.log(client.state)
+  }
+  
+  if (client.apply_match_timer) {
+    clearTimeout(client.apply_match_timer)
+    delete client[apply_match_timer]
   }
 }
 
@@ -432,6 +470,14 @@ function cancelReturnBattle(username) {
   }
 }
 
+function clientIsAlive(username) {
+  let connected_client = loss_connection_clients[username]
+  delete connected_client[loss_health]
+  connected_client.health = config.CONNECTED_HEALTH
+  connected_clients[username] = connected_client
+  delete loss_connection_clients[username]
+}
+
 // Server Function
 
 // Search a idle manager to create a room.
@@ -507,6 +553,15 @@ function recordDeadPlayer(username, dead_player_name) {
       room.dead_players_list.push(dead_player_name)
     }
   }
+}
+
+// Delete the character when the player die.
+function deleteCharacterInGame(username, dead_player_name) {
+  let send_msg = {
+    action: 'DeleteCharacterFromServer',
+    username: dead_player_name
+  }
+  connected_servers[username].server.websocket.send(JSON.stringify(send_msg))
 }
 
 // Server dead
@@ -596,13 +651,25 @@ let health_monitor = setInterval( () => {
     if (connected_clients[key].health <= 0) {
       resetClientStateWithoutPlaying(key)
       loss_connection_clients[key] = connected_clients[key]
+      loss_connection_clients[key].loss_health = config.DISCONNECTED_HEALTH
       delete connected_clients[key]
+      // try to ask client to connect socket
+      let json_msg = {
+        action: 'ReconnectSocket'
+      }
+      loss_connection_clients[key].client.websocket.send(JSON.stringify(json_msg))
     }
   })
 
   Object.keys(connected_servers).forEach( (key) => {
     if (connected_servers[key].health <= 0) {
       serverDead(key)
+    }
+  })
+
+  Object.keys(loss_connection_clients).forEach( (key) => {
+    if (loss_connection_clients[key].loss_health <= 0) {
+      delete loss_connection_clients[key]
     }
   })
 }, 5000)
@@ -614,6 +681,9 @@ function applyDamage() {
   })
   Object.keys(connected_servers).forEach( (key) => {
     connected_servers[key].health -= 1
+  })
+  Object,keys(loss_connection_clients).forEach( (key) => {
+    loss_connection_clients[key].loss_health -= 1
   })
 }
 
