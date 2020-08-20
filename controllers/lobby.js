@@ -532,7 +532,7 @@ function leaveTheBattle(username) {
 
 function clientIsAlive(username) {
   let connected_client = loss_connection_clients[username]
-  delete connected_client[loss_health]
+  // delete connected_client[loss_health]
   connected_client.health = config.CONNECTED_HEALTH
   connected_clients[username] = connected_client
   delete loss_connection_clients[username]
