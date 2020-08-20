@@ -60,6 +60,10 @@ const manageConnection = async ctx => {
             console.log('The server ' + username + ' loss connection.')
             return
           }
+          else {
+            resetHealth(username)
+            heartBeatACK(username)
+          }
 
           // Debug
           if (json_msg.action != 'HeartBeat') {
@@ -77,8 +81,8 @@ const manageConnection = async ctx => {
             setRoomState(username)
           }
           else if (json_msg.action == 'HeartBeat') {
-            resetHealth(username)
-            heartBeatACK(username)
+            // resetHealth(username)
+            // heartBeatACK(username)
           }
           else if (json_msg.action == 'EnterSettlement') {
             setDSStateSettlement(username)
@@ -151,6 +155,9 @@ const manageConnection = async ctx => {
           let json_msg = JSON.parse(msg)
 
           if (connected_clients[username]) {
+            resetHealth(username)
+            heartBeatACK(username)
+
             // Debug
             if (json_msg.action != 'HeartBeat') {
               console.log('User: ' + username + ' Message: ' + msg)
@@ -166,8 +173,8 @@ const manageConnection = async ctx => {
               endGame(username)
             }
             else if (json_msg.action == 'HeartBeat') {
-              resetHealth(username)
-              heartBeatACK(username)
+              // resetHealth(username)
+              // heartBeatACK(username)
             }
             else if (json_msg.action == 'JoinDS') {
               setPlayerStateJoinDS(username)
@@ -228,16 +235,12 @@ const manageConnection = async ctx => {
     console.log('Have not token')
     status_code = 0
   }
-  console.log(1111111111)
   let send_msg = {
     action: 'ConnectedComplete',
     status_code: status_code
   }
-  console.log(1111111111)
   ctx.websocket.send(JSON.stringify(send_msg))
-  console.log(1111111111)
   console.log(JSON.stringify(send_msg))
-  console.log(1111111111)
 }
 
 // Client Functions
@@ -804,8 +807,8 @@ let lobby_server = setInterval( () => {
 
         // Some room setting.
         let setting = {
-          setup_cond: 0,
-          max_players: 2,
+          setup_cond: config.BEGIN_COUNT_DOWN_PLAYER_AMOUNT,
+          max_players: config.MAX_PLAYERS,
         }
 
         let new_room = new Room(history_room_num, 'Ready', room_owner, setting)

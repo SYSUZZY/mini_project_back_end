@@ -35,7 +35,7 @@ class Room {
       if (this.state_DS == 'Sleep') {
 
         // Satisfy the setup condition.
-        if (this.waitting_queue.length > this.setup_cond) {
+        if (this.waitting_queue.length >= this.setup_cond) {
           // Send setup DS command.
           let send_msg = {
             action: 'CreateSession',
