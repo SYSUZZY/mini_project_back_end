@@ -87,7 +87,7 @@ const manageConnection = async ctx => {
             kickOutThePlayer(username, json_msg.username)
           }
           else if (json_msg.action == 'BlockAllPlayers') {
-            blockAllPlayers(username)
+            setRoomState(username)
           }
         })
   
@@ -542,8 +542,13 @@ function setRoomState(username) {
   room.state = 'Busy'
   server.state = 'Busy'
   room.state_DS = 'Battle'
-  // Debug
-  console.log('Room owner\'s State: ' + room.owner.state)
+  
+  for (let i = 0; i < room.waitting_queue.length; i++) {
+    let cur_player = this.waitting_queue.shift()
+    cur_player.state = 'Waitting'
+    cur_player.room_id = undefined
+    waitting_queue.push(cur_player)
+  }
   
 }
 
@@ -617,10 +622,6 @@ function kickOutThePlayer(username, client_username) {
       }
     }
   }
-}
-
-function blockAllPlayers(username) {
-
 }
 
 // Lobby Function
