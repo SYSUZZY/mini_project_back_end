@@ -122,12 +122,14 @@ const manageConnection = async ctx => {
         else if (connected_clients.hasOwnProperty(username)) {
           console.log(username + ' has been already in Lobby.')
           connected_clients[username].client = ctx
+          connected_clients.health = config.CONNECTED_HEALTH
           checkDSState(username)
         }
         else if (loss_connection_clients.hasOwnProperty(username)) {
           console.log(username + ' has been already in Loss connection list.')
           connected_clients[username] = loss_connection_clients[username]
           connected_clients[username].client = ctx
+          connected_clients.health = config.CONNECTED_HEALTH
           delete loss_connection_clients[username]
           delete connected_clients[username][loss_health]
           checkDSState(username)
@@ -175,7 +177,7 @@ const manageConnection = async ctx => {
               leaveTheBattle(username)
             }
           }
-          else {
+          else if (loss_connection_clients[username]) {
             if (json_msg.action == 'KeepAlive') {
               clientIsAlive(username)
             }
@@ -400,12 +402,12 @@ function feedbackCloseSocket(username) {
   if (connected_clients[username]) {
     console.log('Find client ' + username)
     resetClientState(username)
-
     connected_clients[username].state = 'Closing'
-    let send_msg = {
-      action: 'CloseSocket',
-    }
-    connected_clients[username].client.websocket.send(JSON.stringify(send_msg))
+
+    // let send_msg = {
+    //   action: 'CloseSocket',
+    // }
+    // connected_clients[username].client.websocket.send(JSON.stringify(send_msg))
   }
   else {
     console.log('Can not find the client ' + username)
