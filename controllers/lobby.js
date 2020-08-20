@@ -234,7 +234,7 @@ const manageConnection = async ctx => {
     status_code: status_code
   }
   console.log(1111111111)
-  ctx.send(JSON.stringify(send_msg))
+  ctx.websocket.send(JSON.stringify(send_msg))
   console.log(1111111111)
   console.log(JSON.stringify(send_msg))
   console.log(1111111111)
