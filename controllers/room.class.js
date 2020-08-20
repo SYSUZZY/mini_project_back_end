@@ -1,3 +1,5 @@
+const config = require('../config')
+
 class Room {
   
   constructor(id, state, owner, setting) {
@@ -32,7 +34,10 @@ class Room {
           // Send setup DS command.
           let send_msg = {
             action: 'CreateSession',
-            session_name: this.session_name
+            session_name: this.session_name,
+            current_wait_to_count_down_duration: config.CURRENT_WAIT_TO_COUNT_DOWN_DURATION,
+            begin_count_down_player_amount: config.BEGIN_COUNT_DOWN_PLAYER_AMOUNT,
+            count_down_time: config.COUNT_DOWN_TIME
           }
           this.owner.server.websocket.send(JSON.stringify(send_msg))
           // Debug
