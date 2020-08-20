@@ -228,13 +228,16 @@ const manageConnection = async ctx => {
     console.log('Have not token')
     status_code = 0
   }
-
+  console.log(1111111111)
   let send_msg = {
     action: 'ConnectedComplete',
     status_code: status_code
   }
+  console.log(1111111111)
   ctx.send(JSON.stringify(send_msg))
+  console.log(1111111111)
   console.log(JSON.stringify(send_msg))
+  console.log(1111111111)
 }
 
 // Client Functions
