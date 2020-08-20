@@ -464,7 +464,7 @@ function cancelReturnBattle(username) {
         action: 'CancelReturnBattle',
         username: username
       }
-      let room = room_list(connected_client.room_id)
+      let room = room_list[connected_client.room_id]
       if (room) {
         if (!room.checkDeadPlayer(username)) {
           if (room.state_DS == 'Battle') {
@@ -484,7 +484,7 @@ function leaveTheBattle(username) {
         action: 'CharacterDieInGame',
         username: username
       }
-      let room = room_list(connected_client.room_id)
+      let room = room_list[connected_client.room_id]
       if (room) {
         if (!room.checkDeadPlayer(username)) {
           if (room.state_DS == 'Battle') {
