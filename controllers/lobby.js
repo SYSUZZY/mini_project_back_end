@@ -657,7 +657,7 @@ function kickOutThePlayer(username, client_username) {
             let send_msg = {
               action: 'CancelReturnBattleComplete'
             }
-            connected_clients[client_username].client.send(JSON.stringify(send_msg))
+            connected_clients[client_username].client.websocket.send(JSON.stringify(send_msg))
           }
         }
       }
