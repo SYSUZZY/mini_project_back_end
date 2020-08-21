@@ -25,210 +25,204 @@ const manageConnection = async ctx => {
       console.log('No Authorization')
       status_code = 1
     }
-
-
-    if (payload.username == username && payload.username != undefined) {
-      status_code = 3
-      // Server connected.
-      if (username.length < 8) {
-
-        console.log(username + ' connect to server.')
-
-        if (!connected_servers.hasOwnProperty(username)) {
-          // Bind the username to websocket
-          // The state of manager: Busy & Idle
-          connected_servers[username] = { 
-            username: username, 
-            room_id: undefined, 
-            state: 'Idle', 
-            server: ctx, 
-            health: config.CONNECTED_HEALTH
-          }
-        }
-        else {
-          console.log(username + ' has been already in Lobby.')
-        }
-
-        // Register Event Listener
-        ctx.websocket.on('message', (msg) => {
-
-          let username = ctx.params.username
-          let json_msg = JSON.parse(msg)
-
-          // Some universal inspection
-          if (!connected_servers[username]) {
-            console.log('The server ' + username + ' loss connection.')
-            return
+    else {
+      if (payload.username == username && payload.username != undefined) {
+        status_code = 3
+        // Server connected.
+        if (username.length < 8) {
+  
+          console.log(username + ' connect to server.')
+  
+          if (!connected_servers.hasOwnProperty(username)) {
+            // Bind the username to websocket
+            // The state of manager: Busy & Idle
+            connected_servers[username] = { 
+              username: username, 
+              room_id: undefined, 
+              state: 'Idle', 
+              server: ctx, 
+              health: config.CONNECTED_HEALTH
+            }
           }
           else {
-            resetHealth(username)
-            heartBeatACK(username)
+            console.log(username + ' has been already in Lobby.')
           }
-
-          // Debug
-          if (json_msg.action != 'HeartBeat') {
-            console.log('User: ' + username + ' Message: ' + msg)
-          }
-          
-          if (json_msg.action == 'GameCompleted') {
-            gameCompleteSetting(username)
-          }
-          else if (json_msg.action == 'SendSessionId') {
-            console.log('Session ID: ' + json_msg.session_id)
-            setSessionIdForRoom(username, json_msg)
-          }
-          else if (json_msg.action == 'GameStarted') {
-            setRoomState(username)
-          }
-          else if (json_msg.action == 'HeartBeat') {
-            // resetHealth(username)
-            // heartBeatACK(username)
-          }
-          else if (json_msg.action == 'EnterSettlement') {
-            setDSStateSettlement(username)
-          }
-          else if (json_msg.action == 'SendDeadPlayer') {
-            recordDeadPlayer(username, json_msg.dead_player)
-            characterDieInGame(username, json_msg.dead_player)
-          }
-          else if (json_msg.action == 'CancelReturnBattleComplete') {
-            kickOutThePlayer(username, json_msg.username)
-          }
-          else if (json_msg.action == 'BlockAllPlayers') {
-            setRoomState(username)
-          }
-          else if (json_msg.action == 'GetDSConfig') {
-            getDSConfig(username)
-          }
-        })
   
-        ctx.websocket.on('close', ()=> {
-          let username = ctx.params.username
-          console.log(username + ' close the websocket.')
-          if (connected_servers[username]) {
-            serverDead(username)
-          }
-        })
+          // Register Event Listener
+          ctx.websocket.on('message', (msg) => {
   
-        ctx.websocket.send('Websocket connnect successfully.')
-      }
-      // Client connected.
-      else {
-
-        console.log(username + ' connect to server.')
-
-        if (!connected_clients.hasOwnProperty(username) && !loss_connection_clients.hasOwnProperty(username)) {
-          // The state of client: Idle & Waitting & Ready & Playing
-          connected_clients[username] = { 
-            username: username, 
-            room_id: undefined, 
-            state: 'Idle', 
-            client: ctx, 
-            health: config.CONNECTED_HEALTH 
-          }
-        }
-        else if (connected_clients.hasOwnProperty(username)) {
-          console.log(username + ' has been already in Lobby.')
-          connected_clients[username].client = ctx
-          connected_clients.health = config.CONNECTED_HEALTH
-          checkDSState(username)
-        }
-        else if (loss_connection_clients.hasOwnProperty(username)) {
-          console.log(username + ' has been already in Loss connection list.')
-          connected_clients[username] = loss_connection_clients[username]
-          console.log(1)
-          connected_clients[username].client = ctx
-          console.log(2)
-          connected_clients.health = config.CONNECTED_HEALTH
-          console.log(3)
-          delete loss_connection_clients[username]
-          console.log(4)
-          // delete connected_clients[username][loss_health]
-          console.log(5)
-          checkDSState(username)
-        }
+            let username = ctx.params.username
+            let json_msg = JSON.parse(msg)
   
-        // Register Event Listener
-        ctx.websocket.on('message', (msg) => {
-          
-          let username = ctx.params.username
-          let json_msg = JSON.parse(msg)
-
-          if (connected_clients[username]) {
-            resetHealth(username)
-            heartBeatACK(username)
-
+            // Some universal inspection
+            if (!connected_servers[username]) {
+              console.log('The server ' + username + ' loss connection.')
+              return
+            }
+            else {
+              resetHealth(username)
+              heartBeatACK(username)
+            }
+  
             // Debug
             if (json_msg.action != 'HeartBeat') {
-              console.log('User: ' + username + ' Message: ' + msg)
+              console.log('Server: ' + username + ' Message: ' + msg)
             }
-
-            if (json_msg.action == 'ApplyMatch') {
-              applyMatch(username)
+            
+            if (json_msg.action == 'GameCompleted') {
+              gameCompleteSetting(username)
             }
-            else if (json_msg.action == 'CancelMatch') {
-              cancelMatch(username)
+            else if (json_msg.action == 'SendSessionId') {
+              setSessionIdForRoom(username, json_msg)
             }
-            else if (json_msg.action == 'EndGame') {
-              endGame(username)
+            else if (json_msg.action == 'GameStarted') {
+              setRoomState(username)
             }
             else if (json_msg.action == 'HeartBeat') {
               // resetHealth(username)
               // heartBeatACK(username)
+              // All the package from client can be a heart beat
             }
-            else if (json_msg.action == 'JoinDS') {
-              setPlayerStateJoinDS(username)
+            else if (json_msg.action == 'EnterSettlement') {
+              setDSStateSettlement(username)
             }
-            else if (json_msg.action == 'CloseSocket') {
-              console.log(username + ' wants to close socket.')
-              feedbackCloseSocket(username)
+            else if (json_msg.action == 'SendDeadPlayer') {
+              recordDeadPlayer(username, json_msg.dead_player)
+              characterDieInGame(username, json_msg.dead_player)
             }
-            else if (json_msg.action == 'ReturnBattle') {
-              returnBattle(username)
+            else if (json_msg.action == 'CancelReturnBattleComplete') {
+              kickOutThePlayer(username, json_msg.username)
             }
-            else if (json_msg.action == 'CancelReturnBattle') {
-              cancelReturnBattle(username)
+            else if (json_msg.action == 'BlockAllPlayers') {
+              setRoomState(username)
             }
-            else if (json_msg.action == 'LeaveTheBattle') {
-              leaveTheBattle(username)
+            else if (json_msg.action == 'GetDSConfig') {
+              getDSConfig(username)
             }
-          }
-          else if (loss_connection_clients[username]) {
-            if (json_msg.action == 'KeepAlive') {
-              clientIsAlive(username)
+          })
+    
+          ctx.websocket.on('close', ()=> {
+            let username = ctx.params.username
+            console.log(username + ' close the websocket.')
+            if (connected_servers[username]) {
+              serverDead(username)
             }
-            else {
-              console.log('The client ' + username + ' loss connection.')
-              return
-            }
-          }
-        })
+          })
+    
+          ctx.websocket.send('Websocket connnect successfully.')
+        }
+        // Client connected.
+        else {
   
-        ctx.websocket.on('close', ()=> {
-          let username = ctx.params.username
-          console.log(username + ' close the websocket.')
-
-          if (connected_clients[username]) {
-            // Close socket normally.
-            if (connected_clients[username].state == 'Closing') {
-              resetClientState(username)
-              delete connected_clients[username]
-            }
-            // Close socket abnormally.
-            else {
-              resetClientStateWithoutPlaying(username)
-              loss_connection_clients[username] = connected_clients[username]
-              loss_connection_clients[username].loss_health = config.DISCONNECTED_HEALTH
-              delete connected_clients[username]
+          console.log(username + ' connect to server.')
+  
+          if (!connected_clients.hasOwnProperty(username) && !loss_connection_clients.hasOwnProperty(username)) {
+            // The state of client: Idle & Waitting & Ready & Playing
+            connected_clients[username] = { 
+              username: username, 
+              room_id: undefined, 
+              state: 'Idle', 
+              client: ctx, 
+              health: config.CONNECTED_HEALTH 
             }
           }
-        })
+          else if (connected_clients.hasOwnProperty(username)) {
+            console.log(username + ' has been already in lobby.')
+            connected_clients[username].client = ctx
+            connected_clients.health = config.CONNECTED_HEALTH
+            checkDSState(username)
+          }
+          else if (loss_connection_clients.hasOwnProperty(username)) {
+            console.log(username + ' has been already in loss connection list.')
+            connected_clients[username] = loss_connection_clients[username]
+            connected_clients[username].client = ctx
+            connected_clients.health = config.CONNECTED_HEALTH
+            delete loss_connection_clients[username]
+            checkDSState(username)
+          }
+    
+          // Register Event Listener
+          ctx.websocket.on('message', (msg) => {
+            
+            let username = ctx.params.username
+            let json_msg = JSON.parse(msg)
   
-        ctx.websocket.send('Websocket connnect successfully.')
+            if (connected_clients[username]) {
+              resetHealth(username)
+              heartBeatACK(username)
+  
+              // Debug
+              if (json_msg.action != 'HeartBeat') {
+                console.log('Client: ' + username + ' Message: ' + msg)
+              }
+  
+              if (json_msg.action == 'ApplyMatch') {
+                applyMatch(username)
+              }
+              else if (json_msg.action == 'CancelMatch') {
+                cancelMatch(username)
+              }
+              else if (json_msg.action == 'EndGame') {
+                endGame(username)
+              }
+              else if (json_msg.action == 'HeartBeat') {
+                // resetHealth(username)
+                // heartBeatACK(username)
+                // All the package from client can be a heart beat
+              }
+              else if (json_msg.action == 'JoinDS') {
+                setPlayerStateJoinDS(username)
+              }
+              else if (json_msg.action == 'CloseSocket') {
+                feedbackCloseSocket(username)
+              }
+              else if (json_msg.action == 'ReturnBattle') {
+                returnBattle(username)
+              }
+              else if (json_msg.action == 'CancelReturnBattle') {
+                cancelReturnBattle(username)
+              }
+              else if (json_msg.action == 'LeaveTheBattle') {
+                leaveTheBattle(username)
+              }
+            }
+            else if (loss_connection_clients[username]) {
+              if (json_msg.action == 'KeepAlive') {
+                clientIsAlive(username)
+              }
+              else {
+                console.log('The client ' + username + ' loss connection.')
+                return
+              }
+            }
+          })
+    
+          ctx.websocket.on('close', ()=> {
+            let username = ctx.params.username
+            console.log(username + ' close the websocket.')
+  
+            if (connected_clients[username]) {
+              // Close socket normally.
+              if (connected_clients[username].state == 'Closing') {
+                resetClientState(username)
+                delete connected_clients[username]
+              }
+              // Close socket abnormally.
+              else {
+                resetClientStateWithoutPlaying(username)
+                loss_connection_clients[username] = connected_clients[username]
+                loss_connection_clients[username].loss_health = config.DISCONNECTED_HEALTH
+                delete connected_clients[username]
+              }
+            }
+          })
+    
+          ctx.websocket.send('Websocket connnect successfully.')
+        }
+      } else {
+        console.log('No Authorization')
+        status_code = 2
       }
-    } else {
-      console.log('No Authorization')
-      status_code = 2
     }
   }
   else {
