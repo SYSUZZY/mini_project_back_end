@@ -5,9 +5,6 @@ const { constants } = require('buffer')
 const verify = util.promisify(jwt.verify)
 
 const createToken = info => {
-  console.log(config.TOKEN_EXPIRE)
-  console.log(info)
-  console.log(config.TOKEN_KEY)
   return 'Bearer ' + jwt.sign(info, config.TOKEN_KEY, {expiresIn: config.TOKEN_EXPIRE})
 }
 
